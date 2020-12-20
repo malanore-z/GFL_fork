@@ -21,8 +21,8 @@ class WorkDirContext(object):
     def __enter__(self):
         self.pre_workdir = os.getcwd()
         os.chdir(self.workdir)
-        self.std_out_file = open(self.std_out_filename, "w")
-        self.std_err_file = open(self.std_out_filename, "w")
+        self.std_out_file = open(self.std_out_filename, "a")
+        self.std_err_file = open(self.std_out_filename, "a")
         sys.stdout = self.std_out_file
         sys.stderr = self.std_err_file
 

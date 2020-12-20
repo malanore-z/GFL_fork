@@ -19,6 +19,7 @@ class Trainer(object):
 
     def __init__(self, job: ClientJob):
         super(Trainer, self).__init__()
+        self.start_time = int(time.time())
         self.job = job
         self._parse_job_config(job.job_config)
         self._parse_train_config(job.train_config)
@@ -70,7 +71,7 @@ class Trainer(object):
         raise NotImplementedError("The sub class of Trainer must implement _train method.")
 
     def _post_train(self):
-        final_params_path = "params-%d" % int(time.time())
+        final_params_path = "params-%d" % self.start_time
         torch.save(self.model.state_dict(), final_params_path)
 
 
@@ -104,7 +105,7 @@ class SupervisedTrainer(Trainer):
 
     def _post_train(self):
         super(SupervisedTrainer, self)._post_train()
-        with open("history.json", "w") as f:
+        with open("history-%d.json" % self.start_time, "w") as f:
             f.write(json.dumps(self.history))
         plt.figure(figsize=(15, 5))
 
@@ -122,7 +123,7 @@ class SupervisedTrainer(Trainer):
         plt.legend()
         plt.grid(True)
 
-        plt.savefig("result-%d.png" % int(time.time()))
+        plt.savefig("result-%d.png" % self.start_time)
 
     def _epoch_train(self):
         return self.__epoch_train(self.dataloader)
