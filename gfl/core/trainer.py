@@ -1,10 +1,11 @@
+import json
 import os
-from pathlib import PurePosixPath, PurePath
 import time
+from pathlib import PurePath
 
 import matplotlib.pyplot as plt
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 
 import gfl
 from gfl.conf import GflPath
@@ -36,12 +37,12 @@ class Trainer(object):
         pass
 
     def _parse_train_config(self, train_config: TrainConfig):
-        module_path = (PurePosixPath(GflPath.job_dir) / self.job.job_id).as_posix()
+        module_path = PurePath(GflPath.client_dir, self.job.job_id).as_posix()
         model_module = ModuleUtils.import_module(module_path, GflPath.model_module_name)
         config_parser = ConfigParser(model_module)
         self.model = config_parser.parse(train_config.model)
         self.loss = config_parser.parse(train_config.loss)
-        self.optimizer = config_parser.parse(train_config.optimizer, self.model)
+        self.optimizer = config_parser.parse(train_config.optimizer, self.model.parameters())
         self.lr_scheduler = config_parser.parse(train_config.lr_scheduler, self.optimizer)
         self.epoch = train_config.epoch
         self.batch_size = train_config.batch_size
@@ -56,6 +57,11 @@ class Trainer(object):
         config_parser = ConfigParser(dataset_module)
         self.dataset = config_parser.parse(dataset_config.dataset)
         self.val_dataset = config_parser.parse(dataset_config.val_dataset)
+        if self.val_dataset is None:
+            val_rate = dataset_config.val_rate
+            dataset_len = len(self.dataset)
+            val_dataset_len = int(val_rate * dataset_len)
+            self.dataset, self.val_dataset = random_split(self.dataset, [dataset_len - val_dataset_len, val_dataset_len])
 
     def _pre_train(self):
         self.model = self.model.to(gfl.device())
@@ -92,12 +98,14 @@ class SupervisedTrainer(Trainer):
             v_l, v_a = self._epoch_valid()
             self.history["valid_loss"].append(v_l)
             self.history["valid_acc"].append(v_a)
-            print("EPOCH %d of %d" % (i + 1, self.epoch))
-            print("      train_loss=%.4f, train_acc=%.2f" % (t_l, t_a))
-            print("      valid_loss=%.4f, valid_acc=%.2f" % (v_l, v_a))
+            print("EPOCH %d of %d" % (i + 1, self.epoch), flush=True)
+            print("      train_loss=%.4f, train_acc=%.2f" % (t_l, t_a), flush=True)
+            print("      valid_loss=%.4f, valid_acc=%.2f" % (v_l, v_a), flush=True)
 
     def _post_train(self):
         super(SupervisedTrainer, self)._post_train()
+        with open("history.json", "w") as f:
+            f.write(json.dumps(self.history))
         plt.figure(figsize=(15, 5))
 
         plt.subplot(1, 2, 1)

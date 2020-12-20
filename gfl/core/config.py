@@ -78,23 +78,23 @@ class ConfigParser(object):
             return self.__get_instance(strategy_type, obj.args, *args)
         return None
 
-    @NotNull(all=["obj"])
+    @NotNull(all=[1])
     def parse(self, obj: ConfigObject, *args):
         instance = None
         if self.__has_strategy(obj):
-            instance = self.parse_strategy(obj, strategy_type=None, *args)
+            instance = self.parse_strategy(obj, None, *args)
         if instance is None:
             instance = self.parse_object(obj, *args)
         return instance
 
-    @NotNull(all=["obj"])
+    @NotNull(all=[1])
     def parse_strategy(self, obj: ConfigObject, strategy_type, *args):
         builtin_type = StrategyParser.parse(obj.strategy, strategy_type)
         if builtin_type is not None:
             return self.__get_instance(builtin_type, obj.args, *args)
         return None
 
-    @NotNull(all=["obj"])
+    @NotNull(all=[1])
     def parse_object(self, obj: ConfigObject, *args):
         instance = getattr(self.module, obj.name, None)
         if instance is None:
@@ -175,7 +175,7 @@ class DatasetConfig(Config):
     dataset = (ConfigObject,)
     transforms = (ConfigObject,)
     val_dataset = (ConfigObject,)
-    val_rating = (float,)
+    val_rate = (float,)
 
     def with_id(self, id):
         self.id = id
@@ -193,17 +193,22 @@ class DatasetConfig(Config):
         self.val_dataset = ConfigObject(val_dataset, **kwargs)
         return self
 
-    def with_val_rating(self, val_rating):
-        self.val_rating = val_rating
+    def with_val_rate(self, val_rating):
+        self.val_rate = val_rating
         return self
 
 
 class JobConfig(Config):
     owner = (str,)
+    round = (int, )
     create_time = (int,)
 
     def with_owner(self, owner):
         self.owner = owner
+        return self
+
+    def with_round(self, round):
+        self.round = round
         return self
 
     def with_create_time(self, create_time):

@@ -2,7 +2,12 @@ from functools import wraps
 from typing import Sequence
 
 
-def NotNull(all: Sequence = None, any: Sequence = None, ret=None):
+def NotNull(all=None, any=None, ret=None):
+
+    if any is None:
+        any = []
+    if all is None:
+        all = []
 
     def decorator(func):
 
@@ -17,6 +22,9 @@ def NotNull(all: Sequence = None, any: Sequence = None, ret=None):
                 except:
                     if kwargs.get(arg) is None:
                         return ret
+
+            if len(any) == 0:
+                return func(*args, **kwargs)
 
             for arg in any:
                 try:

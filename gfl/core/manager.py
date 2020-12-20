@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from pathlib import PurePath
 from typing import Union
 
@@ -23,8 +24,6 @@ class Manager(object):
 
     @classmethod
     def _write_conf(cls, config: Config, filepath):
-        if not os.path.exists(filepath):
-            return
         with open(filepath, "w") as f:
             d = config.to_dict()
             f.write(json.dumps(d, indent=4))
@@ -59,7 +58,8 @@ class JobManager(Manager):
         job_id = JobUtils.generate_job_id()
         job = Job(job_id, job_config, train_config, aggregate_config)
         job_dir = PurePath(GflPath.job_dir, job_id).as_posix()
-        ModuleUtils.submit_module(module, job_dir, GflPath.model_module_name)
+        os.makedirs(job_dir, exist_ok=True)
+        ModuleUtils.submit_module(module, GflPath.model_module_name, job_dir)
         cls._write_conf(job_config, PurePath(job_dir, GflPath.job_conf_filename).as_posix())
         cls._write_conf(train_config, PurePath(job_dir, GflPath.train_conf_filename).as_posix())
         cls._write_conf(aggregate_config, PurePath(job_dir, GflPath.aggregate_conf_filename).as_posix())
@@ -67,11 +67,28 @@ class JobManager(Manager):
 
     @classmethod
     def submit_job(cls, job_id):
-        pass
+        """
+        Fake implement
+        :param job_id:
+        :return:
+        """
+        local_dir = PurePath(GflPath.job_dir, job_id).as_posix()
+        remote_dir = PurePath(GflPath.server_dir, job_id).as_posix()
+        shutil.copytree(local_dir, remote_dir)
 
     @classmethod
-    def fetch_job(cls, job_id):
-        pass
+    def fetch_job(cls, job_id, dataset_id):
+        """
+        Fake implement
+        :param job_id:
+        :param dataset_id:
+        :return:
+        """
+        remote_dir = PurePath(GflPath.server_dir, job_id).as_posix()
+        local_dir = PurePath(GflPath.client_dir, job_id).as_posix()
+        shutil.copytree(remote_dir, local_dir)
+        dataset_conf_path = PurePath(GflPath.dataset_dir, dataset_id, GflPath.dataset_conf_filename).as_posix()
+        shutil.copy(dataset_conf_path, PurePath(local_dir, GflPath.dataset_conf_filename))
 
     @classmethod
     def fetch_all_job(cls):
@@ -126,7 +143,8 @@ class DatasetManager(Manager):
         dataset_id = JobUtils.generate_dataset_id()
         dataset_config.with_id(dataset_id)
         dataset_dir = PurePath(GflPath.dataset_dir, dataset_id).as_posix()
-        ModuleUtils.submit_module(module, dataset_dir, GflPath.dataset_module_name)
+        os.makedirs(dataset_dir, exist_ok=True)
+        ModuleUtils.submit_module(module, GflPath.dataset_module_name, dataset_dir)
         cls._write_conf(dataset_config, PurePath(dataset_dir, GflPath.dataset_conf_filename).as_posix())
         return dataset_id
 

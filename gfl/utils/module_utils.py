@@ -14,7 +14,7 @@ class ModuleUtils(object):
         if module_path.endswith("__init__.py"):
             shutil.copytree(os.path.dirname(module_path), PurePath(target_dir, target_module_name).as_posix())
         else:
-            shutil.copy(module, PurePath(target_dir, target_module_name + ".py"))
+            shutil.copy(module_path, PurePath(target_dir, target_module_name + ".py").as_posix())
 
     @classmethod
     def import_module(cls, path, name):
