@@ -30,8 +30,7 @@ class GflConf(object):
 
     class ipfs:
         enabled = False
-        url = "127.0.0.1"
-        port = 5001
+        addr = "/dns/localhost/tcp/5001/http"
 
     @classmethod
     def reload(cls):

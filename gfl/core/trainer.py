@@ -23,16 +23,21 @@ class Trainer(object):
         self.job = job
         self._parse_job_config(job.job_config)
         self._parse_train_config(job.train_config)
-        self._parse_aggregate_config(job.aggregate_config)
         self._parse_dataset_config(job.dataset_config)
 
     def train(self):
-        work_dir = os.path.join(GflPath.work_dir, self.job.job_id)
+        work_dir = PurePath(GflPath.work_dir, self.job.job_id).as_posix()
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
             self._pre_train()
             self._train()
             self._post_train()
+
+    def validate(self):
+        work_dir = PurePath(GflPath.work_dir, self.job.job_id).as_posix()
+        os.makedirs(work_dir, exist_ok=True)
+        with WorkDirContext(work_dir):
+            return self._validate()
 
     def _parse_job_config(self, job_config: JobConfig):
         pass
@@ -48,9 +53,6 @@ class Trainer(object):
         self.epoch = train_config.epoch
         self.batch_size = train_config.batch_size
         self.train_args = train_config.args
-
-    def _parse_aggregate_config(self, aggregate_config: AggregateConfig):
-        pass
 
     def _parse_dataset_config(self, dataset_config: DatasetConfig):
         module_path = PurePath(GflPath.dataset_dir, dataset_config.id).as_posix()
@@ -74,6 +76,9 @@ class Trainer(object):
         final_params_path = "params-%d" % self.start_time
         torch.save(self.model.state_dict(), final_params_path)
 
+    def _validate(self):
+        raise NotImplementedError("The sub class of Trainer must implement _validate method.")
+
 
 class SupervisedTrainer(Trainer):
 
@@ -93,15 +98,15 @@ class SupervisedTrainer(Trainer):
             "valid_acc": []
         }
         for i in range(self.epoch):
-            t_l, t_a = self._epoch_train()
+            t_l, t_a_c, t_a_t = self._epoch_train()
             self.history["train_loss"].append(t_l)
-            self.history["train_acc"].append(t_a)
-            v_l, v_a = self._epoch_valid()
+            self.history["train_acc"].append(1.0 * t_a_c / t_a_t)
+            v_l, v_a_c, v_a_t = self._epoch_valid()
             self.history["valid_loss"].append(v_l)
-            self.history["valid_acc"].append(v_a)
+            self.history["valid_acc"].append(1.0 * v_a_c / v_a_t)
             print("EPOCH %d of %d" % (i + 1, self.epoch), flush=True)
-            print("      train_loss=%.4f, train_acc=%.2f" % (t_l, t_a), flush=True)
-            print("      valid_loss=%.4f, valid_acc=%.2f" % (v_l, v_a), flush=True)
+            print("      train_loss=%.4f, train_acc=%.2f" % (t_l, 1.0 * t_a_c / t_a_t), flush=True)
+            print("      valid_loss=%.4f, valid_acc=%.2f" % (v_l, 1.0 * v_a_c / v_a_t), flush=True)
 
     def _post_train(self):
         super(SupervisedTrainer, self)._post_train()
@@ -124,6 +129,18 @@ class SupervisedTrainer(Trainer):
         plt.grid(True)
 
         plt.savefig("result-%d.png" % self.start_time)
+
+    def _validate(self):
+        self._pre_train()
+        correct, total = 0, 0
+        with torch.no_grad():
+            _, c, t = self.__epoch_train(self.dataloader)
+            correct += c
+            total += t
+            _, c, t = self.__epoch_train(self.val_dataloader)
+            correct += c
+            total += t
+        return correct, total
 
     def _epoch_train(self):
         return self.__epoch_train(self.dataloader)
@@ -169,4 +186,4 @@ class SupervisedTrainer(Trainer):
                 correct += c[i].item()
                 total += 1
 
-        return epoch_loss / iter_num, correct / total
+        return epoch_loss / iter_num, correct, total

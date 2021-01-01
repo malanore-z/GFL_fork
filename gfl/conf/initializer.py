@@ -10,13 +10,15 @@ from gfl.conf.path import GflPath
 
 
 def create_dir():
-    os.makedirs(GflPath.gfl_dir, exist_ok=True)
-    os.makedirs(GflPath.logs_dir, exist_ok=True)
-    os.makedirs(GflPath.data_dir, exist_ok=True)
-    os.makedirs(GflPath.job_dir, exist_ok=True)
-    os.makedirs(GflPath.client_dir, exist_ok=True)
-    os.makedirs(GflPath.server_dir, exist_ok=True)
-    os.makedirs(GflPath.dataset_dir, exist_ok=True)
+    dirs = [
+        GflPath.gfl_dir,
+        GflPath.tmp_dir,
+        GflPath.logs_dir,
+        GflPath.work_dir, GflPath.server_work_dir, GflPath.client_work_dir,
+        GflPath.data_dir, GflPath.job_dir, GflPath.client_dir, GflPath.server_dir, GflPath.dataset_dir
+    ]
+    for dir in dirs:
+        os.makedirs(dir, exist_ok=True)
 
 
 def init_node():

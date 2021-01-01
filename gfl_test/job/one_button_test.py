@@ -32,7 +32,9 @@ def generate_job():
 
 def prepare(job_id, dataset_id):
     JobManager.submit_job(job_id)
-    JobManager.fetch_job(job_id, dataset_id)
+
+
+    JobManager.fetch_job(job_id)
 
 
 def train(job_id):

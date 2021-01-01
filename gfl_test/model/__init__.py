@@ -6,3 +6,5 @@ from torch.nn import CrossEntropyLoss
 
 class MnistOptimizer(SGD):
     pass
+
+

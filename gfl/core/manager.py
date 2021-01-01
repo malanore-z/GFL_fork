@@ -4,7 +4,7 @@ import shutil
 from pathlib import PurePath
 from typing import Union
 
-from gfl.conf import GflPath
+from gfl.conf import GflPath, GflNode
 from gfl.core.config import *
 from gfl.core.job import *
 from gfl.utils import JobUtils, ModuleUtils
@@ -56,6 +56,8 @@ class JobManager(Manager):
         :return:
         """
         job_id = JobUtils.generate_job_id()
+        if job_config.owner is None:
+            job_config.owner = GflNode.address
         job = Job(job_id, job_config, train_config, aggregate_config)
         job_dir = PurePath(GflPath.job_dir, job_id).as_posix()
         os.makedirs(job_dir, exist_ok=True)
