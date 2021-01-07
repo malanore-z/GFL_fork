@@ -6,6 +6,7 @@ from pathlib import PurePath
 from web3 import Web3
 
 from gfl.conf.conf import GflConf
+from gfl.conf.node import GflNode
 from gfl.conf.path import GflPath
 
 
@@ -48,3 +49,7 @@ def init_gfl(force=False):
     create_dir()
     init_node()
     init_conf()
+
+
+def init_env():
+    GflNode.load_node_key()

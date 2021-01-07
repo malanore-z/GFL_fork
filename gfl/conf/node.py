@@ -6,7 +6,6 @@ from gfl.conf.path import GflPath
 
 
 class GflNode(object):
-
     address = None
     key = None
 
@@ -19,6 +18,3 @@ class GflNode(object):
             keyjson = json.loads(f.read())
         cls.address = keyjson["address"]
         cls.key = keyjson["key"]
-
-
-GflNode.load_node_key()
