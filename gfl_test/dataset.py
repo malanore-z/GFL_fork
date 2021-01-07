@@ -1,3 +1,5 @@
+import os
+
 from torchvision import datasets, transforms
 
 
@@ -10,9 +12,5 @@ class MnistDataset(datasets.MNIST):
         ]))
 
 
-mnist_dataset = MnistDataset("C:/Users/malanore/Documents/PycharmProjects/GFL_fork/dataset")
-
-
-if __name__ == "__main__":
-    import gfl_test
-    mnist = MnistDataset("dataset")
+abs_path = os.path.abspath("dataset")
+mnist_dataset = MnistDataset(abs_path)
