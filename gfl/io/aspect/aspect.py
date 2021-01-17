@@ -30,3 +30,37 @@ def Aspect(advice, position="after"):
                 advice(**func_ret)
         return wrapper
     return decorator
+
+
+def Before(advice):
+
+    def decorator(func):
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            new_kwargs = args2kwargs(advice, args, kwargs)
+            aspect_ret = advice(*args, **new_kwargs)
+            if aspect_ret is None:
+                aspect_ret = {}
+            return func(**aspect_ret)
+
+        return wrapper
+
+    return decorator
+
+
+def After(advice):
+
+    def decorator(func):
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            new_kwargs = args2kwargs(func, args, kwargs)
+            func_ret = func(*args, **new_kwargs)
+            if func_ret is None:
+                func_ret = {}
+            advice(**func_ret)
+
+        return wrapper
+
+    return decorator

@@ -7,6 +7,7 @@ class GflPath:
     gfl_dir = None
     tmp_dir = None
     logs_dir = None
+
     work_dir = None
     server_work_dir = None
     client_work_dir = None
