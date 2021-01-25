@@ -16,6 +16,10 @@ from gfl.utils import ModuleUtils
 
 
 class Trainer(object):
+    """
+    This class is the base class to define a training mode of a model.
+    A variety of distributed model training modes can be realized by inheriting this class.
+    """
 
     def __init__(self, job: ClientJob):
         super(Trainer, self).__init__()
@@ -27,6 +31,10 @@ class Trainer(object):
         self._parse_dataset_config(job.dataset_config)
 
     def train(self):
+        """
+        Start training model: set context environment, modify working directory, redirect stdout and stderr and start
+        training.
+        """
         work_dir = os.path.join(GflPath.work_dir, self.job.job_id)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
@@ -35,9 +43,29 @@ class Trainer(object):
             self._post_train()
 
     def _parse_job_config(self, job_config: JobConfig):
+        """
+        Parse job configuration: generate configuration parser to parse job configuration from serialized
+        parameters. You can override this method in subclass to parse customization parameters.
+
+        parameters:
+            job_config: job configuration parameters which are serialized
+
+        return:
+            None
+        """
         pass
 
     def _parse_train_config(self, train_config: TrainConfig):
+        """
+        Parse training configuration: generate configuration parser to parse model, loss, optimizer,
+        etc. from serialized parameters. You can override this method in subclass to parse customization parameters.
+
+        parameters:
+            train_config: training configuration parameters which are serialized
+
+        return:
+            None
+        """
         module_path = PurePath(GflPath.client_dir, self.job.job_id).as_posix()
         model_module = ModuleUtils.import_module(module_path, GflPath.model_module_name)
         config_parser = ConfigParser(model_module)
@@ -50,9 +78,29 @@ class Trainer(object):
         self.train_args = train_config.args
 
     def _parse_aggregate_config(self, aggregate_config: AggregateConfig):
+        """
+        Parse aggregating configuration: generate configuration parser to parse aggregating configuration from
+        serialized parameters. You can override this method in subclass to parse customization parameters.
+
+        parameters:
+            aggregate_config: aggregating configuration parameters which are serialized
+
+        return:
+            None
+        """
         pass
 
     def _parse_dataset_config(self, dataset_config: DatasetConfig):
+        """
+        Parse dataset configuration: generate configuration parser to parse dataset objects from serialized
+        parameters. You can override this method in subclass to parse customization parameters.
+
+        parameters:
+            dataset_config: dataset configuration parameters which are serialized
+
+        return:
+            None
+        """
         module_path = PurePath(GflPath.dataset_dir, dataset_config.id).as_posix()
         dataset_module = ModuleUtils.import_module(module_path, GflPath.dataset_module_name)
         config_parser = ConfigParser(dataset_module)
@@ -62,30 +110,49 @@ class Trainer(object):
             val_rate = dataset_config.val_rate
             dataset_len = len(self.dataset)
             val_dataset_len = int(val_rate * dataset_len)
-            self.dataset, self.val_dataset = random_split(self.dataset, [dataset_len - val_dataset_len, val_dataset_len])
+            self.dataset, self.val_dataset = random_split(self.dataset,
+                                                          [dataset_len - val_dataset_len, val_dataset_len])
 
     def _pre_train(self):
+        """
+        The preparation for model training. You can override this method in subclass.
+        """
         self.model = self.model.to(gfl.device())
 
     def _train(self):
+        """
+        The model training method. You must override this method in subclass.
+        """
         raise NotImplementedError("The sub class of Trainer must implement _train method.")
 
     def _post_train(self):
+        """
+        The environment cleaning and parameters saving after model training. You can override this method in subclass.
+        """
         final_params_path = "params-%d" % self.start_time
         torch.save(self.model.state_dict(), final_params_path)
 
 
 class SupervisedTrainer(Trainer):
+    """
+    This class inherits the Trainer and realized distributed supervised training mode.
+    """
 
     def __init__(self, job: ClientJob):
         super(SupervisedTrainer, self).__init__(job)
 
     def _pre_train(self):
+        """
+        This method makes the preparation of model training, and generates dataloader and val_dataloader.
+        """
         super(SupervisedTrainer, self)._pre_train()
         self.dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=True)
 
     def _train(self):
+        """
+        This method makes the model training of the specified epochs.
+        """
         self.history = {
             "train_loss": [],
             "train_acc": [],
@@ -104,6 +171,10 @@ class SupervisedTrainer(Trainer):
             print("      valid_loss=%.4f, valid_acc=%.2f" % (v_l, v_a), flush=True)
 
     def _post_train(self):
+        """
+        This method shows the loss and accuracy of model training in the train dataset and valid dataset,
+        and makes the environment cleaning and parameters saving after model training.
+        """
         super(SupervisedTrainer, self)._post_train()
         with open("history-%d.json" % self.start_time, "w") as f:
             f.write(json.dumps(self.history))
@@ -126,17 +197,31 @@ class SupervisedTrainer(Trainer):
         plt.savefig("result-%d.png" % self.start_time)
 
     def _epoch_train(self):
+        """
+        This method makes a epoch of model training on the train dataset.
+
+        """
+
         return self.__epoch_train(self.dataloader)
 
     def _epoch_valid(self):
+        """
+        This method gets the loss and accuracy of the current model on the valid dataset.
+
+        """
         with torch.no_grad():
             return self.__epoch_train(self.val_dataloader)
 
     def __epoch_train(self, dataloader: DataLoader):
         """
+        This method makes a epoch of model training.
 
-        :param dataloader:
-        :return: (loss, acc)
+        parameters:
+            dataloader : DataLoader
+
+        return:
+            epoch_loss / iter_num: the loss of this epoch of training
+            correct / total: the accuracy of this epoch of training
         """
         epoch_loss = 0.0
         iter_num = 0
