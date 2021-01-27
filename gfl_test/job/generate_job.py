@@ -1,7 +1,4 @@
-import gfl_test
-
-from gfl.conf import GflPath
-from gfl.core.config import TrainConfig, JobConfig, AggregateConfig
+from gfl.core.entity.config import TrainConfig, JobConfig, AggregateConfig
 from gfl.core.strategy import LRSchedulerStrategy
 from gfl.core.manager import JobManager
 

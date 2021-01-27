@@ -21,9 +21,9 @@ class GflPath:
     conf_filename = "conf.yaml"
     train_conf_filename = "train.conf"
     aggregate_conf_filename = "aggregate.conf"
-    job_conf_filename = "job.conf"
+    job_conf_filename = "old_job.conf"
     dataset_conf_filename = "dataset.conf"
-    sqlite_db_filename = "job.sqlite"
+    sqlite_db_filename = "old_job.sqlite"
     model_module_name = "fl_model"
     dataset_module_name = "fl_dataset"
 
@@ -38,7 +38,7 @@ def update_root_dir(root_dir: str):
     GflPath.server_work_dir = PurePath(GflPath.work_dir, "server").as_posix()
     GflPath.client_work_dir = PurePath(GflPath.work_dir, "client").as_posix()
     GflPath.data_dir = PurePath(GflPath.gfl_dir, "data").as_posix()
-    GflPath.job_dir = PurePath(GflPath.data_dir, "job").as_posix()
+    GflPath.job_dir = PurePath(GflPath.data_dir, "old_job").as_posix()
     GflPath.client_dir = PurePath(GflPath.data_dir, "client").as_posix()
     GflPath.server_dir = PurePath(GflPath.data_dir, "server").as_posix()
     GflPath.dataset_dir = PurePath(GflPath.data_dir, "dataset").as_posix()

@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader, random_split
 
 import gfl
 from gfl.conf import GflPath
-from gfl.core.job import ClientJob
-from gfl.core.config import *
+from gfl.core.old_job import ClientJob
+from gfl.core.entity.config import *
 from gfl.core.context import WorkDirContext
 from gfl.utils import ModuleUtils
 

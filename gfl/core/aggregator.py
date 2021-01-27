@@ -6,9 +6,9 @@ import torch
 
 import gfl
 from gfl.conf import GflPath
-from gfl.core.config import AggregateConfig, TrainConfig
+from gfl.core.entity.config import AggregateConfig, TrainConfig
 from gfl.core.context import WorkDirContext
-from gfl.core.job import ServerJob
+from gfl.core.old_job import ServerJob
 
 
 class Aggregator(object):

@@ -1,12 +1,9 @@
-import json
-import os
 import shutil
-from pathlib import PurePath
 from typing import Union
 
 from gfl.conf import GflPath, GflNode
-from gfl.core.config import *
-from gfl.core.job import *
+from gfl.core.entity.config import *
+from gfl.core.old_job import *
 from gfl.utils import JobUtils, ModuleUtils
 
 
@@ -48,7 +45,7 @@ class JobManager(Manager):
                      train_config: TrainConfig = TrainConfig(),
                      aggregate_config: AggregateConfig = AggregateConfig()) -> Job:
         """
-        generate job
+        generate old_job
         :param module:
         :param job_config:
         :param train_config:

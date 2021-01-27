@@ -1,6 +1,4 @@
-import gfl_test
-
-from gfl.core.config import DatasetConfig
+from gfl.core.entity.config import DatasetConfig
 from gfl.core.manager import DatasetManager
 
 import gfl_test.dataset as gfl_dataset

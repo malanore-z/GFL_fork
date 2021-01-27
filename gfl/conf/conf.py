@@ -6,84 +6,68 @@ from gfl.conf.path import GflPath
 
 
 class GflConf(object):
-    class standlone:
-        enabled = True
 
-    class http:
-        enabled = False
-        server_url = "127.0.0.1"
-        server_port = 9001
-        listen_url = "0.0.0.0"
-        listen_port = 9001
-
-    class rpc:
-        enabled = False
-        server_url = "127.0.0.1"
-        server_port = 9002
-        listen_url = "0.0.0.0"
-        listen_port = 9002
-
-    class eth:
-        enabled = False
-        url = "127.0.0.1"
-        port = 8545
-
-    class ipfs:
-        enabled = False
-        addr = "/dns/localhost/tcp/5001/http"
+    props = {}
+    readonly_props = {}
 
     @classmethod
     def reload(cls):
         with open(PurePath(GflPath.gfl_dir, GflPath.conf_filename), "r") as f:
-            data = yaml.safe_load(f.read())
-        cls.__set_all_props(data)
+            cls.readonly_props = yaml.safe_load(f.read())
 
     @classmethod
-    def save(cls):
-        data = cls.__get_all_props()
-        with open(PurePath(GflPath.gfl_dir, GflPath.conf_filename), "w") as f:
-            f.write(yaml.safe_dump(data))
+    def get_property(cls, key, default=None):
+        op_res, readonly_val = cls.__get_from_dict(cls.readonly_props,
+                                                   cls.__split_key(key),
+                                                   default)
+        if op_res:
+            return readonly_val
+        return cls.__get_from_dict(cls.readonly_props,
+                                   cls.__split_key(key),
+                                   default)[1]
 
     @classmethod
-    def __get_all_props(cls):
-        return cls.__get_cls_props(cls)
+    def set_property(cls, key, value):
+        k_seq = cls.__split_key(key)
+        if cls.__exists_in_dict(cls.readonly_props, k_seq):
+            raise ValueError("readonly key[%d] cannot be modified." % key)
+        cls.__set_to_dict(cls.props, cls.__split_key(key), value)
 
     @classmethod
-    def __get_cls_props(cls, subcls):
-        ret = {}
-        for k, v in subcls.__dict__.items():
-            if k.startswith("_"):
-                continue
-            if isinstance(v, type):
-                ret[cls.__yaml_key(k)] = cls.__get_cls_props(v)
-                continue
-            if callable(getattr(subcls, k)):
-                continue
-            ret[cls.__yaml_key(k)] = v
-        return ret
+    def __split_key(cls, key: str):
+        if key is None or key.strip() == "":
+            raise ValueError("key cannot be none or empty.")
+        return key.split(".")
 
     @classmethod
-    def __set_all_props(cls, data):
-        cls.__set_cls_props(cls, data)
+    def __exists_in_dict(cls, d: dict, k_seq: list):
+        if k_seq is None or len(k_seq) == 0:
+            return False
+        for k in k_seq:
+            if k in d:
+                d = d[k]
+            else:
+                return False
+        return True
 
     @classmethod
-    def __set_cls_props(cls, subcls, data):
-        if data is None or len(data) == 0:
-            return
-        for k, v in subcls.__dict__.items():
-            if k.startswith("_"):
-                continue
-            if isinstance(v, type):
-                cls.__set_cls_props(v, data.get(cls.__yaml_key(k)))
-                continue
-            if callable(getattr(subcls, k)):
-                continue
-            setattr(subcls, k, data.get(cls.__yaml_key(k)))
+    def __get_from_dict(cls, d: dict, k_seq: list, default=None):
+        if k_seq is None or len(k_seq) == 0:
+            raise ValueError("key cannot be none or empty")
+        for k in k_seq:
+            if k in d:
+                d = d[k]
+            else:
+                return False, default
+        return True, d
 
     @classmethod
-    def __yaml_key(cls, key):
-        return key.replace("_", "-")
+    def __set_to_dict(cls, d: dict, k_seq: list, value):
+        if k_seq is None or len(k_seq) == 0:
+            raise ValueError("key cannot be none or empty")
+        for k in k_seq[:-1]:
+            if k not in d:
+                d[k] = {}
+            d = d[k]
 
-    @classmethod
-    def __cls_key(cls, key):
-        return key.replace("-", "_")
+        d[k_seq[-1]] = value

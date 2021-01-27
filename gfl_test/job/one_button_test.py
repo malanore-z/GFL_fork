@@ -1,10 +1,8 @@
-import gfl_test
-
 import os
 from pathlib import PurePath
 
 from gfl.conf import GflPath
-from gfl.core.config import *
+from gfl.core.entity.config import *
 from gfl.core.manager import DatasetManager, JobManager
 from gfl.core.strategy import LRSchedulerStrategy
 from gfl.core.trainer import SupervisedTrainer

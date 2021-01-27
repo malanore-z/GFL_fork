@@ -1,3 +1,4 @@
+"""
 import os
 
 from gfl.conf.initializer import init_env, init_gfl
@@ -14,3 +15,4 @@ if not os.path.exists("data"):
     init_gfl()
 
 init_env()
+"""
