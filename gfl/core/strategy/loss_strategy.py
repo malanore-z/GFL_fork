@@ -1,6 +1,11 @@
 from enum import Enum
 
-class LossStrategy(Enum):
+import torch.nn as nn
+
+from gfl.core.strategy.strategy_adapter import StrategyAdapter
+
+
+class LossStrategy(Enum, StrategyAdapter):
 
     L1 = "L1Loss"
     NLL = "NLLLoss"
@@ -20,3 +25,6 @@ class LossStrategy(Enum):
     MULTI_MARGIN = "MultiMarginLoss"
     TRIPLE_MARGIN = "TripletMarginLoss"
     CTC = "CTCLoss"
+
+    def _torch_type(self):
+        return getattr(nn, self.value)

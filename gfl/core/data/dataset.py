@@ -1,5 +1,5 @@
 
-from gfl.core.config import DatasetConfig
+from gfl.core.data.config import DatasetConfig
 from gfl.core.data.metadata import DatasetMetadata
 
 

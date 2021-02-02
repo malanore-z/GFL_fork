@@ -32,3 +32,12 @@ class ModuleUtils(object):
             return True
         except:
             return False
+
+    @classmethod
+    def get_name(cls, module, obj):
+        if module is None or obj is None:
+            raise ValueError("")
+        for k, v in module.__dict__.items():
+            if v == obj:
+                return k
+        return None

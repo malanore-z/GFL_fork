@@ -2,7 +2,7 @@
 
 import gfl.core.lfs as lfs
 from gfl.conf import GflNode
-from gfl.core.config import *
+from gfl.core.data.config import *
 from gfl.core.data import Job, JobMetadata
 from gfl.core.manager.manager import Manager
 from gfl.net import *
@@ -38,4 +38,4 @@ class JobManager(Manager):
     @classmethod
     def submit_job(cls, job_id):
         job = lfs.load_job(job_id)
-        NetBroadcast.broadcast_job(job_id, job) # TODO: cast job to zip
+        NetBroadcast.broadcast_job(job_id, job)     # TODO: cast job to zip

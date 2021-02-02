@@ -2,157 +2,180 @@ __all__ = [
     "PlainObject"
 ]
 
-
-def is_primary_type(tp):
-    return tp in [type(None), bool, int, float, str]
+from typing import Any, Tuple, List, Set, Dict, _GenericAlias
 
 
-def is_container_type(tp):
-    return tp in [tuple, list, set, dict]
+"""
+支持的类型：
+1. 基本类型
+    bool, int, float, str
+2. 容器类型
+    Tuple[T], List[T], Set[T], Dict[K, V]
+3. 任意类型
+    Any
+
+方法不对传入参数做校验， 认为传入参数类型可以合法进行转换
+不支持多继承
+不支持不规范的类型声明， 如Dict, tuple, bytes等
+不支持子类覆盖父类同名属性
+"""
 
 
-class Field(object):
+class ClassField(object):
 
-    def __init__(self, name, tp):
-        super(Field, self).__init__()
+    def __init__(self, name, annotation):
+        super(ClassField, self).__init__()
         self.name = name
-        self.tp = tp if isinstance(tp, list) or isinstance(tp, tuple) else (tp,)
-        self.top_type = None
-        self.main_type = None
-        self.verify()
+        self.base_type = None
+        self.sub_types = None
+        self.__parse_annotation(annotation)
 
-    def value(self, obj):
-        return getattr(obj, self.name, None)
+    def __parse_annotation(self, annotation):
+        if annotation in [bool, int, float, str, Any]:
+            self.base_type = annotation
+        elif type(annotation) == type and issubclass(annotation, PlainObject):
+            self.base_type = PlainObject
+            self.sub_types = [ClassMetadata(annotation)]
+        else:
+            self.base_type = annotation.__origin__
+            self.sub_types = []
+            for a in annotation.__args__:
+                self.sub_types.append(ClassField(None, a))
 
-    def is_primay(self):
-        return is_primary_type(self.top_type)
+    def encode(self, o):
+        if self.base_type == Any:
+            return o
+        if self.base_type in [bool, int, float, str]:
+            if self.base_type == type(o):
+                return o
+            else:
+                raise ValueError("%s cannot cast to %s" % (type(o), self.base_type))
+        elif self.base_type == PlainObject:
+            return self.sub_types[0].encode(o)
+        else:
+            if self.base_type == dict:
+                if type(o) == dict:
+                    ret = {}
+                    for k, v in o.items():
+                        ke = self.sub_types[0].encode(k)
+                        ve = self.sub_types[1].encode(v)
+                        ret[ke] = ve
+                    return ret
+                else:
+                    raise ValueError("%s cannot cast to %s" % (type(o), self.base_type))
+            else:
+                if type(o) == self.base_type:
+                    ret = []
+                    for e in o:
+                        ee = self.sub_types[0].encode(e)
+                        ret.append(ee)
+                    return ret
+                else:
+                    raise ValueError("%s cannot cast to %s" % (type(o), self.base_type))
 
-    def is_container(self):
-        return is_container_type(self.top_type)
+    def decode(self, d):
+        if self.base_type == Any:
+            return d
+        if self.base_type in [bool, int, float, str]:
+            if self.base_type == type(d):
+                return d
+            else:
+                raise ValueError("%s cannot cast to %s" % (type(d), self.base_type))
+        elif self.base_type == PlainObject:
+            return self.sub_types[0].decode(d)
+        else:
+            if self.base_type == dict:
+                if type(d) == dict:
+                    ret = {}
+                    for k, v in d.items():
+                        kd = self.sub_types[0].decode(k)
+                        ed = self.sub_types[1].decode(v)
+                        ret[kd] = ed
+                    return ret
+                else:
+                    raise ValueError("%s cannot cast to %s" % (type(d), self.base_type))
+            else:
+                if type(d) == self.base_type:
+                    ret = []
+                    for e in d:
+                        ed = self.sub_types[0].decode(e)
+                        ret.append(ed)
+                    return self.base_type(ret)
+                else:
+                    raise ValueError("%s cannot cast to %s" % (type(d), self.base_type))
 
-    def verify(self):
-        if len(self.tp) < 1 or None in self.tp:
-            raise ValueError("Field defined error: illegal type defination of %s" % self.name)
-        self.top_type = self.tp[0]
-        for t in self.tp[:-1]:
-            if not is_container_type(t):
-                raise ValueError("Field defined error: illegal type defination of %s" % self.name)
-        self.main_type = self.tp[-1]
-        if not is_primary_type(self.main_type) and not issubclass(self.main_type, PlainObject):
-            raise ValueError("Field defined error: illegal type defination of %s" % self.name)
+
+class ClassMetadata(object):
+
+    def __init__(self, clazz):
+        super(ClassMetadata, self).__init__()
+        self.clazz = clazz
+        self.fields = []
+        self.__parse_clazz(clazz)
+
+    def __parse_clazz(self, clazz):
+        for name, at in clazz.__annotations__.items():
+            self.fields.append(ClassField(name, at))
+
+    def encode(self, o):
+        ret = {}
+        for f in self.fields:
+            ret[f.name] = f.encode(getattr(o, f.name))
+        return ret
+
+    def decode(self, d, out_obj=None):
+        if out_obj is None:
+            out_obj = self.clazz()
+        for f in self.fields:
+            if f.name not in d:
+                raise ValueError("%s field missed." % f.name)
+            setattr(out_obj, f.name, f.decode(d[f.name]))
+        return out_obj
+
+
+metadata_cache = {}
+
+
+def reflect_metadata(clazz):
+    if clazz in metadata_cache:
+        return metadata_cache[clazz]
+    metadata = ClassMetadata(clazz)
+    metadata_cache[clazz] = metadata
+    return metadata
 
 
 class PlainObject(object):
 
     def __init__(self, **kwargs):
         super(PlainObject, self).__init__()
-        args = kwargs
-        self.__assign_args(type(self), args)
-        if len(args) > 0:
-            raise ValueError("%s not exists." % (args.popitem()[0]))
+        self._set_kwargs(type(self), **kwargs)
 
-    def __assign_args(self, cls, args):
+    def _set_kwargs(self, cls, **kwargs):
         if cls == PlainObject:
             return
-        if len(cls.__bases__) > 1:
-            raise TypeError("multi inherit is not supported.")
-        self.__assign_args(cls.__bases__[0], args)
-        for k, f in reflect_metadata(cls).items():
-            val = args.pop(k, None)
-            setattr(self, k, val)
+        self._set_kwargs(cls.__base__, **kwargs)
+        for name, _ in cls.__annotations__.items():
+            if name in kwargs:
+                setattr(self, name, kwargs.get(name))
 
     def to_dict(self):
-        return po_to_dict(type(self), self)
+        return self.__to_dict(type(self))
 
-    def from_dict(self, dt: dict):
-        return po_from_dict(type(self), self, dt)
+    def from_dict(self, d):
+        return self.__from_dict(d, type(self))
 
-
-metadata_cache = {}
-
-
-def reflect_metadata(cls):
-    global metadata_cache
-    if cls in metadata_cache:
-        return metadata_cache[cls]
-    fields = {}
-    for k, v in cls.__dict__.items():
-        if not k.startswith("_") and not callable(getattr(cls, k)):
-            fields[k] = Field(k, v)
-    metadata_cache[cls] = fields
-    return fields
-
-
-def container_to_dict(tp, obj):
-    if is_primary_type(tp[0]):
-        return obj
-    if is_container_type(tp[0]):
-        if tp[0] == dict:
-            ret = {}
-            for k, v in obj.items():
-                ret[k] = container_to_dict(tp[1:], v)
-        else:
-            ret = []
-            for v in obj:
-                ret.append(container_to_dict(tp[1:], v))
+    def __to_dict(self, cls):
+        if cls == PlainObject:
+            return {}
+        ret = self.__to_dict(cls.__base__)
+        metadata = reflect_metadata(cls)
+        ret.update(metadata.encode(self))
         return ret
-    return obj.to_dict()
 
-
-def container_from_dict(tp, dt):
-    if is_primary_type(tp[0]):
-        return dt
-    if is_container_type(tp[0]):
-        if tp[0] == dict:
-            ret = {}
-            for k, v in dt.items():
-                ret[k] = container_from_dict(tp[1:], v)
-        else:
-            ret = []
-            for v in dt:
-                ret.append(container_from_dict(tp[1:], v))
-            ret = tp[0](ret)
-        return ret
-    return tp[0]().from_dict(dt)
-
-
-def po_to_dict(cls, obj: PlainObject):
-    if cls == PlainObject:
-        return {}
-
-    super_cls = cls.__base__
-    ret = po_to_dict(super_cls, obj)
-
-    for k, f in reflect_metadata(cls).items():
-        val = getattr(obj, k, None)
-        if val is None:
-            ret[k] = None
-            continue
-        if f.is_primay():
-            ret[f.name] = val
-        elif f.is_container():
-            ret[f.name] = container_to_dict(f.tp, val)
-        else:
-            ret[f.name] = val.to_dict()
-    return ret
-
-
-def po_from_dict(cls, obj, dt):
-    if cls == PlainObject:
-        return obj
-
-    super_cls = cls.__base__
-    obj = po_from_dict(super_cls, obj, dt)
-
-    for k, f in reflect_metadata(cls).items():
-        val = dt.get(k)
-        if val is None:
-            continue
-        if f.is_primay():
-            setattr(obj, f.name, val)
-        elif f.is_container():
-            setattr(obj, f.name, container_from_dict(f.tp, val))
-        else:
-            setattr(obj, f.name, f.main_type().from_dict(val))
-
-    return obj
+    def __from_dict(self, d, cls):
+        if cls == PlainObject:
+            return self
+        self.__from_dict(d, cls.__base__)
+        metadata = reflect_metadata(cls)
+        metadata.decode(d, self)
+        return self

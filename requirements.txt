@@ -3,3 +3,4 @@ PyYAML
 matplotlib
 Flask
 requests_toolbelt
+eciespy

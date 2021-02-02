@@ -1,18 +1,31 @@
-from pathlib import PurePath
-
 import yaml
 
-from gfl.conf.path import GflPath
+from gfl.utils import PathUtils
 
 
-class GflConf(object):
+class GflConfMetadata(type):
 
+    @property
+    def home_dir(cls):
+        return cls._GflConf__home_dir
+
+    @home_dir.setter
+    def home_dir(cls, value):
+        cls._GflConf__home_dir = value
+
+
+class GflConf(object, metaclass=GflConfMetadata):
+
+    # 运行时可以修改的参数
     props = {}
+    # 从配置文件种读取的参数，运行时不可更改
     readonly_props = {}
+
+    __home_dir = PathUtils.join(PathUtils.user_home_dir(), ".gfl")
 
     @classmethod
     def reload(cls):
-        with open(PurePath(GflPath.gfl_dir, GflPath.conf_filename), "r") as f:
+        with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "r") as f:
             cls.readonly_props = yaml.safe_load(f.read())
 
     @classmethod
@@ -32,6 +45,11 @@ class GflConf(object):
         if cls.__exists_in_dict(cls.readonly_props, k_seq):
             raise ValueError("readonly key[%d] cannot be modified." % key)
         cls.__set_to_dict(cls.props, cls.__split_key(key), value)
+
+    @classmethod
+    def init_conf(cls):
+        with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "w") as f:
+            yaml.safe_dump(default_conf, f)
 
     @classmethod
     def __split_key(cls, key: str):
@@ -71,3 +89,26 @@ class GflConf(object):
             d = d[k]
 
         d[k_seq[-1]] = value
+
+
+default_conf = {
+    "standalone": {
+        "enabled": True
+    },
+    "http": {
+        "enabled": False,
+        "server_url": "127.0.0.1",
+        "server_port": 9001,
+        "listen_url": "127.0.0.1",
+        "listen_port": 9001
+    },
+    "eth": {
+        "enabled": False,
+        "url": "127.0.0.1",
+        "port": 8545
+    },
+    "ipfs": {
+        "enabled": False,
+        "addr": "/dns/localhost/tcp/5001/http"
+    }
+}

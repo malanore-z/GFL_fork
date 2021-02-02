@@ -1,6 +1,6 @@
 
 import gfl.core.lfs as lfs
-from gfl.core.config import DatasetConfig
+from gfl.core.data.config import DatasetConfig
 from gfl.core.manager.manager import Manager
 
 

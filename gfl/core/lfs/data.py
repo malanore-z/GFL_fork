@@ -1,25 +1,30 @@
 __all__ = [
+    "load_dataset",
+    "save_dataset",
     "load_job",
     "save_job",
-    "load_dataset",
-    "save_dataset"
+    "load_job_zip",
+    "save_job_zip"
 ]
 
 import json
-import os
+from io import BytesIO
 
-import gfl.core.lfs.path as lfs_path
-from gfl.core.config import *
+from gfl.conf import GflConf
 from gfl.core.data import *
-from gfl.utils import PathUtils, ModuleUtils
+from gfl.core.data.config import *
+from gfl.core.lfs.ipfs import Ipfs
+from gfl.core.lfs.path import JobPath, DatasetPath
+from gfl.core.lfs.types import File
+from gfl.utils import ModuleUtils, PathUtils, ZipUtils
 
 
-def __load_json(file_path, cls):
+def __load_json(file_path, clazz):
     if PathUtils.exists(file_path):
         return None
     with open(file_path, "r") as f:
         d = json.loads(f.read())
-    return cls().from_dict(d)
+    return clazz().from_dict(d)
 
 
 def __save_json(file_path, obj):
@@ -27,13 +32,31 @@ def __save_json(file_path, obj):
         f.write(json.dumps(obj.to_dict(), indent=4, ensure_ascii=False))
 
 
-def load_job(job_id):
-    job_path = lfs_path.job_dir(job_id)
-    metadata = __load_json(PathUtils.join(job_path, lfs_path.metadata_filename), JobMetadata)
-    config_path = PathUtils.join(job_path, "job")
-    job_config = __load_json(PathUtils.join(config_path, lfs_path.job_config_filename), JobConfig)
-    train_config = __load_json(PathUtils.join(config_path, lfs_path.train_config_filename), TrainConfig)
-    aggregate_config = __load_json(PathUtils.join(config_path, lfs_path.aggregate_config_filename), AggregateConfig)
+def load_dataset(dataset_id: str):
+    dataset_path = DatasetPath(dataset_id)
+    metadata = __load_json(dataset_path.metadata_file, DatasetMetadata)
+    dataset_config = __load_json(dataset_path.dataset_config_file, DatasetConfig)
+    return Dataset(dataset_id=dataset_id,
+                   metadata=metadata,
+                   dataset_config=dataset_config)
+
+
+def save_dataset(dataset: Dataset, module):
+    if module is None:
+        module = dataset.dataset_config.module
+    dataset_path = DatasetPath(dataset.dataset_id)
+    dataset_path.makedirs()
+    __save_json(dataset_path.metadata_file, dataset.metadata)
+    __save_json(dataset_path.dataset_config_file, dataset.dataset_config)
+    ModuleUtils.submit_module(module, dataset_path.module_dir)
+
+
+def load_job(job_id: str):
+    job_path = JobPath(job_id)
+    metadata = __load_json(job_path.metadata_file, JobMetadata)
+    job_config = __load_json(job_path.job_config_file, JobConfig)
+    train_config = __load_json(job_path.train_config_file, TrainConfig)
+    aggregate_config = __load_json(job_path.aggregate_config_file, AggregateConfig)
     return Job(job_id=job_id,
                metadata=metadata,
                job_config=job_config,
@@ -42,30 +65,33 @@ def load_job(job_id):
 
 
 def save_job(job: Job, module):
-    job_path = lfs_path.job_dir(job.job_id)
-    config_path = PathUtils.join(job_path, "job")
-    os.makedirs(config_path, exist_ok=True)
-    __save_json(PathUtils.join(job_path, lfs_path.metadata_filename), job.metadata)
-    __save_json(PathUtils.join(config_path, lfs_path.job_config_filename), job.job_config)
-    __save_json(PathUtils.join(config_path, lfs_path.train_config_filename), job.train_config)
-    __save_json(PathUtils.join(config_path, lfs_path.aggregate_config_filename), job.aggregate_config)
-    ModuleUtils.submit_module(module, lfs_path.model_module_name, config_path)
+    if module is None:
+        module = job.job_config.module
+    job_path = JobPath(job.job_id)
+    job_path.makedirs()
+    __save_json(job_path.metadata_file, job.metadata)
+    __save_json(job_path.job_config_file, job.job_config)
+    __save_json(job_path.train_config_file, job.train_config)
+    __save_json(job_path.aggregate_config_file, job.aggregate_config)
+    ModuleUtils.submit_module(module, job_path.module_dir)
 
 
-def load_dataset(dataset_id):
-    dataset_path = lfs_path.dataset_dir(dataset_id)
-    metadata = __load_json(PathUtils.join(dataset_path, lfs_path.metadata_filename), DatasetMetadata)
-    config_path = PathUtils.join(dataset_path, "dataset")
-    dataset_config = __load_json(PathUtils.join(config_path, lfs_path.dataset_config_filename), DatasetConfig)
-    return Dataset(dataset_id=dataset_id,
-                   metadata=metadata,
-                   dataset_config=dataset_config)
+def load_job_zip(job_id: str):
+    job_path = JobPath(job_id)
+    file_obj = BytesIO()
+    ZipUtils.compress([job_path.metadata_file, job_path.config_dir], file_obj)
+    if GflConf.get_property("ipfs.enabled"):
+        file_obj.seek(0)
+        ipfs_hash = Ipfs.put(file_obj.read())
+        return File(ipfs_hash == ipfs_hash)
+    else:
+        return File(file=file_obj)
 
 
-def save_dataset(dataset: Dataset, module):
-    dataset_path = lfs_path.dataset_dir(dataset.dataset_id)
-    config_path = PathUtils.join(dataset_path, "dataset")
-    os.makedirs(config_path, exist_ok=True)
-    __save_json(PathUtils.join(dataset_path, lfs_path.metadata_filename), dataset.metadata)
-    __save_json(PathUtils.join(config_path, lfs_path.dataset_config_filename), dataset.dataset_config)
-    ModuleUtils.submit_module(module, lfs_path.dataset_module_name, config_path)
+def save_job_zip(job_id: str, job: File):
+    job_path = JobPath(job_id)
+    if job.ipfs_hash is not None and job.ipfs_hash != "":
+        file_obj = Ipfs.get(job.ipfs_hash)
+    else:
+        file_obj = File.file
+    ZipUtils.extract(file_obj, job_path.root_dir)

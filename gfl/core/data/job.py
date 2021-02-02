@@ -1,5 +1,5 @@
 
-from gfl.core.config import TrainConfig, AggregateConfig, JobConfig
+from gfl.core.data.config import TrainConfig, AggregateConfig, JobConfig
 from gfl.core.data.metadata import JobMetadata
 
 
@@ -17,7 +17,7 @@ class Job(object):
         self.job_config = job_config
         self.train_config = train_config
         self.aggregate_config = aggregate_config
-        self.dataset_config = None
+        self.dataset = None
 
     def mount_dataset(self, dataset_id: str):
         pass

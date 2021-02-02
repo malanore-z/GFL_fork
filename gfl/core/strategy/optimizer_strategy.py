@@ -1,6 +1,11 @@
 from enum import Enum
 
-class OptimizerStrategy(Enum):
+import torch.optim as optim
+
+from gfl.core.strategy.strategy_adapter import StrategyAdapter
+
+
+class OptimizerStrategy(Enum, StrategyAdapter):
 
     SGD = "SGD"
     ASGD = "ASGD"
@@ -13,3 +18,6 @@ class OptimizerStrategy(Enum):
     ADAMAX = "Adamax"
     SPARSE_ADAM = "SparseAdam"
     LBFGS = "LBFGS"
+
+    def _torch_type(self):
+        return getattr(optim, self.value)
