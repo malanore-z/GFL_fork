@@ -1,10 +1,7 @@
-
-import json
 import time
 import uuid
 
-from gfl.conf import GflNode
-from gfl.utils import PathUtils
+from gfl.conf.node import GflNode
 
 
 class Manager(object):

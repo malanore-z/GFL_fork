@@ -1,6 +1,8 @@
 __all__ = [
     "load_dataset",
     "save_dataset",
+    "load_dataset_zip",
+    "save_dataset_zip",
     "load_job",
     "save_job",
     "load_job_zip",
@@ -48,7 +50,28 @@ def save_dataset(dataset: Dataset, module):
     dataset_path.makedirs()
     __save_json(dataset_path.metadata_file, dataset.metadata)
     __save_json(dataset_path.dataset_config_file, dataset.dataset_config)
-    ModuleUtils.submit_module(module, dataset_path.module_dir)
+    ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.module_dir)
+
+
+def load_dataset_zip(dataset_id: str):
+    dataset_path = DatasetPath(dataset_id)
+    file_obj = BytesIO()
+    ZipUtils.compress(dataset_path.metadata_file, file_obj)
+    if GflConf.get_property("ipfs.enabled"):
+        file_obj.seek(0)
+        ipfs_hash = Ipfs.put(file_obj.read())
+        return File(ipfs_hash=ipfs_hash)
+    else:
+        return File(file=file_obj)
+
+
+def save_dataset_zip(dataset_id: str, dataset: File):
+    dataset_path = DatasetPath(dataset_id)
+    if dataset.ipfs_hash is not None and dataset.ipfs_hash != "":
+        file_obj = Ipfs.get(dataset.ipfs_hash)
+    else:
+        file_obj = dataset.file
+    ZipUtils.extract(file_obj, dataset_path.root_dir)
 
 
 def load_job(job_id: str):
@@ -73,7 +96,7 @@ def save_job(job: Job, module):
     __save_json(job_path.job_config_file, job.job_config)
     __save_json(job_path.train_config_file, job.train_config)
     __save_json(job_path.aggregate_config_file, job.aggregate_config)
-    ModuleUtils.submit_module(module, job_path.module_dir)
+    ModuleUtils.submit_module(module, job_path.module_name, job_path.module_dir)
 
 
 def load_job_zip(job_id: str):

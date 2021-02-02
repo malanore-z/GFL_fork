@@ -1,19 +1,28 @@
 
 import gfl.core.lfs as lfs
+from gfl.conf.node import GflNode
+from gfl.core.data import Dataset, DatasetMetadata
 from gfl.core.data.config import DatasetConfig
 from gfl.core.manager.manager import Manager
+from gfl.net import NetBroadcast
 
 
 class DatasetManager(Manager):
 
     @classmethod
     def generate_dataset(cls, module,
-                         dataset_config: DatasetConfig) -> DatasetConfig:
+                         metadata: DatasetMetadata,
+                         dataset_config: DatasetConfig) -> Dataset:
         dataset_id = cls.generate_dataset_id()
-        dataset_config.with_dataset_id(dataset_id)
-        lfs.save_dataset(dataset_config, module)
-        return dataset_config
+        if metadata.owner is None:
+            metadata.owner = GflNode.address
+        dataset = Dataset(dataset_id=dataset_id,
+                          metadata=metadata,
+                          dataset_config=dataset_config)
+        lfs.save_dataset(dataset, module)
+        return dataset
 
     @classmethod
-    def load_dataset(cls, dataset_id):
-        return lfs.load_dataset(dataset_id)
+    def submit_dataset(cls, dataset_id: str):
+        dataset = lfs.load_dataset_zip(dataset_id)
+        NetBroadcast.broadcast_dataset(dataset_id, dataset)

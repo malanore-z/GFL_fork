@@ -70,7 +70,8 @@ class JobPath(Path):
         self.__job_config_file = PathUtils.join(self.__root_dir, "job", "job.json")
         self.__train_config_file = PathUtils.join(self.__root_dir, "job", "train.json")
         self.__aggregate_config_file = PathUtils.join(self.__root_dir, "job", "aggregate.json")
-        self.__module_dir = PathUtils.join(self.__root_dir, "job", "fl_model")
+        self.__module_name = "fl_model"
+        self.__module_dir = PathUtils.join(self.__root_dir, "job", self.__module_name)
         self.__metrics_dir = PathUtils.join(self.__root_dir, "results", "metrics")
         self.__params_dir = PathUtils.join(self.__root_dir, "results", "params")
         self.__reports_dir = PathUtils.join(self.__root_dir, "results", "reports")
@@ -113,6 +114,10 @@ class JobPath(Path):
         return self.__aggregate_config_file
 
     @property
+    def module_name(self):
+        return self.__module_name
+
+    @property
     def module_dir(self):
         return self.__module_dir
 
@@ -146,7 +151,8 @@ class DatasetPath(Path):
         self.__metadata_file = PathUtils.join(self.__root_dir, "metadata.json")
         self.__config_dir = PathUtils.join(self.__root_dir, "dataset")
         self.__dataset_config_file = PathUtils.join(self.__root_dir, "dataset", "dataset.json")
-        self.__module_dir = PathUtils.join(self.__root_dir, "dataset", "fl_dataset")
+        self.__module_name = "fl_dataset"
+        self.__module_dir = PathUtils.join(self.__root_dir, "dataset", self.__module_name)
 
     def makedirs(self):
         os.makedirs(self.__root_dir, exist_ok=True)
@@ -167,6 +173,10 @@ class DatasetPath(Path):
     @property
     def dataset_config_file(self):
         return self.__dataset_config_file
+
+    @property
+    def module_name(self):
+        return self.__module_name
 
     @property
     def module_dir(self):
