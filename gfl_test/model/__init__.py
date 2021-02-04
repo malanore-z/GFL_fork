@@ -6,3 +6,8 @@ from torch.nn import CrossEntropyLoss
 
 class MnistOptimizer(SGD):
     pass
+
+
+model = Net()
+
+sgd111 = SGD(model.parameters(), lr=0.1)
