@@ -5,4 +5,4 @@ __all__ = [
     "NetSend"
 ]
 
-from gfl.net.standlone import *
+from gfl.net.standlone import NetBroadcast, NetFetch, NetReceive, NetSend

@@ -43,9 +43,9 @@ def load_dataset(dataset_id: str):
                    dataset_config=dataset_config)
 
 
-def save_dataset(dataset: Dataset, module):
+def save_dataset(dataset: Dataset, module=None):
     if module is None:
-        module = dataset.dataset_config.module
+        module = dataset.module
     dataset_path = DatasetPath(dataset.dataset_id)
     dataset_path.makedirs()
     __save_json(dataset_path.metadata_file, dataset.metadata)
@@ -87,9 +87,9 @@ def load_job(job_id: str):
                aggregate_config=aggregate_config)
 
 
-def save_job(job: Job, module):
+def save_job(job: Job, module=None):
     if module is None:
-        module = job.job_config.module
+        module = job.module
     job_path = JobPath(job.job_id)
     job_path.makedirs()
     __save_json(job_path.metadata_file, job.metadata)
