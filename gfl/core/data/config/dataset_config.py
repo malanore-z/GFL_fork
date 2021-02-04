@@ -6,8 +6,8 @@ from gfl.core.data.config.config import Config
 class DatasetConfig(Config):
 
     dataset: ConfigObject
-    val_dataset: ConfigObject
-    val_rate: float
+    val_dataset: ConfigObject = None
+    val_rate: float = 0.2
 
     def with_dataset(self, dataset, **kwargs):
         self.dataset = self._set_config_object(dataset, **kwargs)

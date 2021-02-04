@@ -3,10 +3,10 @@ from gfl.utils.po_utils import PlainObject
 
 class Metadata(PlainObject):
 
-    id = (str, )
-    owner = (str, )
-    create_time = (int, )
-    content = (str, )
+    id: str = None
+    owner: str = None
+    create_time: int
+    content: str
 
 
 class JobMetadata(Metadata):

@@ -1,19 +1,9 @@
 __all__ = [
-    "node_key",
-    "node_address",
     "get_property",
     "set_property"
 ]
 
-from gfl.conf import GflNode, GflConf
-
-
-def node_key():
-    return GflNode.key
-
-
-def node_address():
-    return GflNode.address
+from gfl.conf import GflConf
 
 
 def get_property(key, default=None):

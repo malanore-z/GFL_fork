@@ -16,6 +16,7 @@ class DatasetManager(Manager):
         dataset_id = cls.generate_dataset_id()
         if metadata.owner is None:
             metadata.owner = GflNode.address
+        metadata.id = dataset_id
         dataset = Dataset(dataset_id=dataset_id,
                           metadata=metadata,
                           dataset_config=dataset_config)

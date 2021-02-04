@@ -186,6 +186,6 @@ class DatasetPath(Path):
 def init_lfs():
     os.makedirs(cache_dir())
     os.makedirs(data_dir())
-    os.makedirs(log_dir())
+    os.makedirs(logs_dir())
     os.makedirs(PathUtils.join(data_dir(), "job"))
     os.makedirs(PathUtils.join(data_dir(), "dataset"))

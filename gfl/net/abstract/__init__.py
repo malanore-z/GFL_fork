@@ -4,8 +4,6 @@ __all__ = [
     "NetFetch",
     "NetReceive",
     "NetSend",
-    "node_address",
-    "node_key",
     "get_property",
     "set_property"
 ]

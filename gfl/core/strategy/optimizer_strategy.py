@@ -5,7 +5,7 @@ import torch.optim as optim
 from gfl.core.strategy.strategy_adapter import StrategyAdapter
 
 
-class OptimizerStrategy(Enum, StrategyAdapter):
+class OptimizerStrategy(StrategyAdapter, Enum):
 
     SGD = "SGD"
     ASGD = "ASGD"

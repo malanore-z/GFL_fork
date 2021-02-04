@@ -5,7 +5,7 @@ import torch.nn as nn
 from gfl.core.strategy.strategy_adapter import StrategyAdapter
 
 
-class LossStrategy(Enum, StrategyAdapter):
+class LossStrategy(StrategyAdapter, Enum):
 
     L1 = "L1Loss"
     NLL = "NLLLoss"

@@ -43,6 +43,8 @@ class ClassField(object):
                 self.sub_types.append(ClassField(None, a))
 
     def encode(self, o):
+        if o is None:
+            return o
         if self.base_type == Any:
             return o
         if self.base_type in [bool, int, float, str]:
@@ -74,6 +76,8 @@ class ClassField(object):
                     raise ValueError("%s cannot cast to %s" % (type(o), self.base_type))
 
     def decode(self, d):
+        if d is None:
+            return d
         if self.base_type == Any:
             return d
         if self.base_type in [bool, int, float, str]:

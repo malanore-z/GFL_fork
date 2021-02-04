@@ -50,7 +50,7 @@ def save_dataset(dataset: Dataset, module):
     dataset_path.makedirs()
     __save_json(dataset_path.metadata_file, dataset.metadata)
     __save_json(dataset_path.dataset_config_file, dataset.dataset_config)
-    ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.module_dir)
+    ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.config_dir)
 
 
 def load_dataset_zip(dataset_id: str):

@@ -28,6 +28,7 @@ class JobManager(Manager):
         job_id = cls.generate_job_id()
         if metadata.owner is None:
             metadata.owner = GflNode.address
+        metadata.id = job_id
         job = Job(job_id=job_id,
                   metadata=metadata,
                   job_config=job_config,

@@ -5,7 +5,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from gfl.core.strategy.strategy_adapter import StrategyAdapter
 
 
-class LRSchedulerStrategy(Enum, StrategyAdapter):
+class LRSchedulerStrategy(StrategyAdapter, Enum):
 
     LAMBDA_LR = "LambdaLR"
     MULTIPLICATIVE_LR = "MultiplicativeLR"

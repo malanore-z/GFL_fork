@@ -9,7 +9,7 @@ class TrainConfig(Config):
     batch_size: int = 32
     model: ConfigObject
     optimizer: ConfigObject
-    lr_scheduler: ConfigObject
+    lr_scheduler: ConfigObject = None
     loss: ConfigObject
 
     def with_epoch(self, epoch=10):
