@@ -10,8 +10,12 @@ class PathUtils(object):
 
     @classmethod
     def user_home_dir(cls):
-        return os.path.expanduser("~")
+        return cls.join(os.path.expanduser("~"))
 
     @classmethod
     def exists(cls, path):
         return os.path.exists(path)
+
+    @classmethod
+    def abspath(cls, path):
+        return cls.join(os.path.abspath(path))

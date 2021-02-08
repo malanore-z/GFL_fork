@@ -6,18 +6,6 @@ from gfl.conf import GflConf
 from gfl.utils import PathUtils
 
 
-def cache_dir():
-    return PathUtils.join(GflConf.home_dir, "cache")
-
-
-def data_dir():
-    return PathUtils.join(GflConf.home_dir, "data")
-
-
-def logs_dir():
-    return PathUtils.join(GflConf.home_dir, "logs")
-
-
 class Path(object):
 
     _instances = {}
@@ -63,7 +51,7 @@ class JobPath(Path):
 
     def __init__(self, id):
         super(JobPath, self).__init__(id)
-        self.__root_dir = PathUtils.join(data_dir(), "job", id)
+        self.__root_dir = PathUtils.join(GflConf.data_dir, "job", id)
         self.__metadata_file = PathUtils.join(self.__root_dir, "metadata.json")
         self.__sqlite_file = PathUtils.join(self.__root_dir, "job.sqlite")
         self.__config_dir = PathUtils.join(self.__root_dir, "job")
@@ -147,7 +135,7 @@ class DatasetPath(Path):
 
     def __init__(self, id):
         super(DatasetPath, self).__init__(id)
-        self.__root_dir = PathUtils.join(data_dir(), "dataset", id)
+        self.__root_dir = PathUtils.join(GflConf.data_dir, "dataset", id)
         self.__metadata_file = PathUtils.join(self.__root_dir, "metadata.json")
         self.__config_dir = PathUtils.join(self.__root_dir, "dataset")
         self.__dataset_config_file = PathUtils.join(self.__root_dir, "dataset", "dataset.json")
@@ -184,8 +172,8 @@ class DatasetPath(Path):
 
 
 def init_lfs():
-    os.makedirs(cache_dir())
-    os.makedirs(data_dir())
-    os.makedirs(logs_dir())
-    os.makedirs(PathUtils.join(data_dir(), "job"))
-    os.makedirs(PathUtils.join(data_dir(), "dataset"))
+    os.makedirs(GflConf.cache_dir)
+    os.makedirs(GflConf.data_dir)
+    os.makedirs(GflConf.logs_dir)
+    os.makedirs(PathUtils.join(GflConf.data_dir, "job"))
+    os.makedirs(PathUtils.join(GflConf.data_dir, "dataset"))

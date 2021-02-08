@@ -1,3 +1,4 @@
+import abc
 import os
 
 from gfl.conf.node import GflNode
@@ -10,14 +11,6 @@ from gfl.utils import TimeUtils
 
 class Trainer(object):
 
-    """
-        epoch: int = 10
-    batch_size: int = 32
-    model: ConfigObject
-    optimizer: ConfigObject
-    lr_scheduler: ConfigObject
-    loss: ConfigObject
-    """
     def __init__(self, job: Job, step: int, client: GflNode = GflNode.default_node):
         super(Trainer, self).__init__()
         self.job_start_time = TimeUtils.millis_time()
@@ -48,19 +41,33 @@ class Trainer(object):
         pass
 
     def _parse_train_config(self, train_config: TrainConfig):
-        pass
+        self.model = train_config.get_model()
+        self.optimizer = train_config.get_optimizer(self.model)
+        self.lr_scheduler = train_config.get_optimizer(self.optimizer)
+        self.loss = train_config.get_loss()
+        self.epoch = train_config.get_epoch()
+        self.batch_size = train_config.get_batch_size()
 
     def _parse_dataset_config(self, dataset_config: DatasetConfig):
-        pass
+        self.dataset = dataset_config.get_dataset()
+        self.val_dataset = dataset_config.get_val_dataset()
+        if self.val_dataset is None:
+            self.dataset, self.val_dataset = self._split_dataset(self.dataset, dataset_config.get_val_rate())
+
+    @abc.abstractmethod
+    def _split_dataset(self, dataset, rate):
+        raise NotImplementedError("")
 
     def _pre_train(self):
         pass
 
+    @abc.abstractmethod
     def _train(self):
         raise NotImplementedError("")
 
     def _post_train(self):
         pass
 
+    @abc.abstractmethod
     def _validate(self):
         raise NotImplementedError("")
