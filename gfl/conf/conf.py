@@ -11,7 +11,22 @@ class GflConfMetadata(type):
 
     @home_dir.setter
     def home_dir(cls, value):
-        cls._GflConf__home_dir = value
+        cls._GflConf__home_dir = PathUtils.abspath(value)
+        cls._GflConf__data_dir = PathUtils.join(value, "data")
+        cls._GflConf__logs_dir = PathUtils.join(value, "logs")
+        cls._GflConf__cache_dir = PathUtils.join(value, "cache")
+
+    @property
+    def data_dir(cls):
+        return cls._GflConf__data_dir
+
+    @property
+    def logs_dir(cls):
+        return cls._GflConf__logs_dir
+
+    @property
+    def cache_dir(cls):
+        return cls._GflConf__cache_dir
 
 
 class GflConf(object, metaclass=GflConfMetadata):
@@ -22,6 +37,9 @@ class GflConf(object, metaclass=GflConfMetadata):
     readonly_props = {}
 
     __home_dir = PathUtils.join(PathUtils.user_home_dir(), ".gfl")
+    __data_dir = PathUtils.join(__home_dir, "data")
+    __logs_dir = PathUtils.join(__home_dir, "logs")
+    __cache_dir = PathUtils.join(__home_dir, "cache")
 
     @classmethod
     def reload(cls):
@@ -93,7 +111,9 @@ class GflConf(object, metaclass=GflConfMetadata):
 
 default_conf = {
     "standalone": {
-        "enabled": True
+        "enabled": True,
+        "server_number": 1,
+        "client_number": 5
     },
     "http": {
         "enabled": False,

@@ -4,3 +4,4 @@ matplotlib
 Flask
 requests_toolbelt
 eciespy
+daemoniker

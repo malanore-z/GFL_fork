@@ -11,10 +11,12 @@ init_parser.add_argument("--home", type=str)
 init_parser.add_argument("-F", "--force", action="store_true")
 
 server_parser = subparsers.add_parser("server", help="startup gfl server")
+server_parser.add_argument("--home", type=str)
 server_parser.add_argument("-d", action="store_true")
 server_parser.add_argument("-D", dest="props", action="append", type=str)
 
 client_parser = subparsers.add_parser("client", help="startup gfl client")
+client_parser.add_argument("--home", type=str)
 client_parser.add_argument("-d", action="store_true")
 
 attach_parser = subparsers.add_parser("attach", help="connect to gfl net")

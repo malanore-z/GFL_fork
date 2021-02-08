@@ -38,14 +38,18 @@ def load_dataset(dataset_id: str):
     dataset_path = DatasetPath(dataset_id)
     metadata = __load_json(dataset_path.metadata_file, DatasetMetadata)
     dataset_config = __load_json(dataset_path.dataset_config_file, DatasetConfig)
-    return Dataset(dataset_id=dataset_id,
-                   metadata=metadata,
-                   dataset_config=dataset_config)
+    module = ModuleUtils.import_module(dataset_path.module_dir, dataset_path.module_name)
+    dataset_config.module = module
+    dataset = Dataset(dataset_id=dataset_id,
+                      metadata=metadata,
+                      dataset_config=dataset_config)
+    dataset.module = module
+    return dataset
 
 
-def save_dataset(dataset: Dataset, module):
+def save_dataset(dataset: Dataset, module=None):
     if module is None:
-        module = dataset.dataset_config.module
+        module = dataset.module
     dataset_path = DatasetPath(dataset.dataset_id)
     dataset_path.makedirs()
     __save_json(dataset_path.metadata_file, dataset.metadata)
@@ -80,16 +84,22 @@ def load_job(job_id: str):
     job_config = __load_json(job_path.job_config_file, JobConfig)
     train_config = __load_json(job_path.train_config_file, TrainConfig)
     aggregate_config = __load_json(job_path.aggregate_config_file, AggregateConfig)
-    return Job(job_id=job_id,
-               metadata=metadata,
-               job_config=job_config,
-               train_config=train_config,
-               aggregate_config=aggregate_config)
+    module = ModuleUtils.import_module(job_path.module_dir, job_path.module_name)
+    job_config.module = module
+    train_config.module = module
+    aggregate_config.module = module
+    job = Job(job_id=job_id,
+              metadata=metadata,
+              job_config=job_config,
+              train_config=train_config,
+              aggregate_config=aggregate_config)
+    job.module = module
+    return job
 
 
-def save_job(job: Job, module):
+def save_job(job: Job, module=None):
     if module is None:
-        module = job.job_config.module
+        module = job.module
     job_path = JobPath(job.job_id)
     job_path.makedirs()
     __save_json(job_path.metadata_file, job.metadata)

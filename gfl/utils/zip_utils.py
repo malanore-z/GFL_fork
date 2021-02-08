@@ -39,6 +39,9 @@ class ZipUtils(object):
 
     @classmethod
     def __add_file(cls, zip_file: ZipFile, basename, source):
+        if not os.path.isdir(source):
+            zip_file.write(source, basename)
+            return
         for filename in os.listdir(source):
             new_source = PurePath(source, filename).as_posix()
             new_basename = PurePath(basename, filename).as_posix()
