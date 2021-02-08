@@ -2,3 +2,6 @@ web3
 PyYAML
 matplotlib
 Flask
+requests_toolbelt
+eciespy
+daemoniker

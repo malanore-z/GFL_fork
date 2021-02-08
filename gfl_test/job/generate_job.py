@@ -1,22 +1,37 @@
 import gfl_test
 
-from gfl.conf import GflPath
-from gfl.core.config import TrainConfig, JobConfig, AggregateConfig
-from gfl.core.strategy import LRSchedulerStrategy
-from gfl.core.manager import JobManager
+from gfl.core.manager import JobManager, DatasetManager
+from gfl.core.manager.generator import DatasetGenerator, JobGenerator
+from gfl.core.strategy import *
 
-import gfl_test.model as gfl_model
+import gfl_test.model as fl_model
+import gfl_test.dataset as fl_dataset
+
+
+def generate_dataset():
+    generator = DatasetGenerator(fl_dataset)
+    generator.metadata.content = "mnist dataset"
+    generator.dataset_config.with_dataset(fl_dataset.mnist_dataset)
+    generator.dataset_config.with_val_rate(0.2)
+    dataset = generator.generate()
+    DatasetManager.submit_dataset(dataset)
+    print(dataset.dataset_id)
+
+
+def generate_job():
+    generator = JobGenerator(fl_model)
+    generator.metadata.content = "mnist CNN"
+    generator.job_config.with_trainer(TrainerStrategy.SUPERVISED)
+    generator.job_config.with_aggregator(AggregatorStrategy.FED_AVG)
+    generator.train_config.with_model(fl_model.model)
+    generator.train_config.with_optimizer(fl_model.MnistOptimizer, lr=0.2)
+    generator.train_config.with_loss(fl_model.CrossEntropyLoss)
+    generator.aggregate_config.with_round(3)
+    job = generator.generate()
+    JobManager.submit_job(job)
+    print(job.job_id)
 
 
 if __name__ == "__main__":
-    train_config = TrainConfig(epoch=10, batch_size=32)\
-            .with_model(gfl_model.Net)\
-            .with_loss(gfl_model.CrossEntropyLoss)\
-            .with_optimizer(gfl_model.MnistOptimizer, lr=0.01)\
-            .with_lr_scheduler(LRSchedulerStrategy.ReduceLROnPlateau, mode="max", factor=0.5, patience=5)
-    aggregate_config = AggregateConfig()
-    job_config = JobConfig(round=3)
-    job = JobManager.generate_job(gfl_model, job_config, train_config, aggregate_config)
-    print(job.job_id)
-
-    JobManager.submit_job(job.job_id)
+    generate_dataset()
+    generate_job()

@@ -1,0 +1,5 @@
+自定义Trainer/Aggregator
+Aggregator需要定义聚合算法和聚合算法执行节点
+参与聚合的会有多个文件
+数据集划分方法
+物联网设备
