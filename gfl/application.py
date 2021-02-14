@@ -5,7 +5,6 @@ from daemoniker import Daemonizer
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
-from gfl.core.lfs.path import logs_dir
 from gfl.node.manager import NodeManager
 from gfl.utils import PathUtils
 
@@ -26,14 +25,15 @@ class Application(object):
                 if is_setup:
                     pass
                 pid_file = "proc.lock"
-                stdout_file = PathUtils.join(logs_dir(), "console_out")
-                stderr_file = PathUtils.join(logs_dir(), "console_err")
+                stdout_file = PathUtils.join(GflConf.logs_dir, "console_out")
+                stderr_file = PathUtils.join(GflConf.logs_dir, "console_err")
                 is_parent = daemonizer(pid_file, stdout_goto=stdout_file, stderr_goto=stderr_file)
                 if is_parent:
                     pass
 
         GflConf.reload()
         GflNode.load_node()
+
 
         if GflConf.get_property("standalone.enabled"):
             server_number = GflConf.get_property("standalone.server_number")

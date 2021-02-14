@@ -17,8 +17,11 @@ class ModuleUtils(object):
             shutil.copy(module_path, PurePath(target_dir, target_module_name + ".py").as_posix())
 
     @classmethod
-    def import_module(cls, path, name):
-        module_name = path.replace("/", ".") + "." + name
+    def import_module(cls, path, name=None):
+        if name is not None:
+            module_name = path.replace("/", ".") + "." + name
+        else:
+            module_name = path.replace("/", ".")
         return importlib.import_module(module_name)
 
     @classmethod

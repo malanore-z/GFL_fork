@@ -3,6 +3,7 @@ import sys
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
+from gfl.core.manager.job_manager import JobManager
 
 
 class NodeManager(object):
@@ -13,4 +14,5 @@ class NodeManager(object):
         self.role = role
 
     def run(self,):
-        print("%s-Manager-%s" % (self.role, self.node.address))
+        jobs = JobManager.unfinished_jobs()
+        pass
