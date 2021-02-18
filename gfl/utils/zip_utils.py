@@ -9,10 +9,11 @@ class ZipUtils(object):
     @classmethod
     def compress(cls, src_paths: Union[str, list], dst_zip_file, basename=None) -> NoReturn:
         """
-        将src_paths指向的文件压缩成zip格式， 保存到dst_zip_file中。
-        :param src_paths: 带压缩的文件或文件夹目录， 接受多个文件或文件夹以列表形式传入
-        :param dst_zip_file: 类文件对象或文件路径，用于存储压缩后的数据
-        :param basename: zip文件列表的根目录
+        Compress the file that scr_paths point to into ZIP format and save it in dst_zip_file.
+
+        :param src_paths: A compressed file or folder directory. Accepts multiple files or folders as a list.
+        :param dst_zip_file: A file-like object or file path that stores compressed data
+        :param basename: The root directory of the list of zip files.
         """
         if type(src_paths) not in [list, tuple, set]:
             src_paths = (src_paths, )
@@ -29,9 +30,10 @@ class ZipUtils(object):
     @classmethod
     def extract(cls, src_zip_file, dst_path: str) -> NoReturn:
         """
-        将zip文件解压到指定目录
-        :param src_zip_file: 待解压的类文件对象或文件路径
-        :param dst_path: 解压到的目录
+        Unzip the zip file to the specified directory.
+
+        :param src_zip_file: The file-like object or file path to be extracted
+        :param dst_path: The directory that the zip file is unzipped to.
         """
         zip_file = ZipFile(src_zip_file, "r", ZIP_DEFLATED)
         zip_file.extractall(dst_path)

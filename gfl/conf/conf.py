@@ -16,20 +16,30 @@ class GflConfMetadata(type):
 
 class GflConf(object, metaclass=GflConfMetadata):
 
-    # 运行时可以修改的参数
+    # Parameters that can be modified at run time
     props = {}
-    # 从配置文件种读取的参数，运行时不可更改
+    # Parameters that are read from a configuration file and cannot be changed at run time
     readonly_props = {}
-
+    # home directory
     __home_dir = PathUtils.join(PathUtils.user_home_dir(), ".gfl")
+
 
     @classmethod
     def reload(cls):
+        """
+        Reload readonly parameters from the YAML file.
+        :return:
+        """
         with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "r") as f:
             cls.readonly_props = yaml.safe_load(f.read())
 
     @classmethod
     def get_property(cls, key, default=None):
+        """
+        Get the value of readonly parameters.
+
+        :param key: a string of the key to get the value
+        """
         op_res, readonly_val = cls.__get_from_dict(cls.readonly_props,
                                                    cls.__split_key(key),
                                                    default)
@@ -41,6 +51,9 @@ class GflConf(object, metaclass=GflConfMetadata):
 
     @classmethod
     def set_property(cls, key, value):
+        """
+        Set parameters at run time.
+        """
         k_seq = cls.__split_key(key)
         if cls.__exists_in_dict(cls.readonly_props, k_seq):
             raise ValueError("readonly key[%d] cannot be modified." % key)
@@ -48,6 +61,9 @@ class GflConf(object, metaclass=GflConfMetadata):
 
     @classmethod
     def init_conf(cls):
+        """
+        Serialize default configuration into a YAML stream.
+        """
         with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "w") as f:
             yaml.safe_dump(default_conf, f)
 
@@ -112,3 +128,4 @@ default_conf = {
         "addr": "/dns/localhost/tcp/5001/http"
     }
 }
+
