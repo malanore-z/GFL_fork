@@ -2,7 +2,7 @@ from gfl.core.data.config.config import Config
 
 
 class AggregateConfig(Config):
-
+    # aggregation round
     round: int = 10
 
     def with_round(self, round_):

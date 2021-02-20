@@ -9,6 +9,13 @@ class ModuleUtils(object):
 
     @classmethod
     def submit_module(cls, module, target_module_name, target_dir):
+        """
+        copy a module to the target directory
+
+        :param module: source module
+        :param target_module_name: target module name
+        :param target_dir: target directory
+        """
         cls.verify_module_api(module)
         module_path = inspect.getsourcefile(module)
         if module_path.endswith("__init__.py"):
@@ -17,7 +24,14 @@ class ModuleUtils(object):
             shutil.copy(module_path, PurePath(target_dir, target_module_name + ".py").as_posix())
 
     @classmethod
-    def import_module(cls, path, name=None):
+    def import_module(cls, path, name):
+        """
+        Import the module dynamically
+
+        :param path: module path
+        :param name: module name
+        :return: module
+        """
         if name is not None:
             module_name = path.replace("/", ".") + "." + name
         else:
