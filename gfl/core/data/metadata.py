@@ -1,3 +1,8 @@
+__all__ = [
+    "DatasetMetadata",
+    "JobMetadata"
+]
+
 from gfl.utils.po_utils import PlainObject
 
 
@@ -9,11 +14,11 @@ class Metadata(PlainObject):
     content: str
 
 
-class JobMetadata(Metadata):
+class DatasetMetadata(Metadata):
 
     pass
 
 
-class DatasetMetadata(Metadata):
+class JobMetadata(Metadata):
 
     pass

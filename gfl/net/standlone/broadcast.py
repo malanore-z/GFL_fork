@@ -7,10 +7,12 @@ class StandaloneBroadcast(NetBroadcast):
 
     @classmethod
     def broadcast_job(cls, job_id: str, job: File) -> NoReturn:
+        # Nothing to do
         pass
 
     @classmethod
     def broadcast_dataset(cls, dataset_id: str, dataset: File) -> NoReturn:
+        # Nothing to do
         pass
 
     @classmethod

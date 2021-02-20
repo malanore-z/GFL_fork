@@ -5,13 +5,14 @@ from gfl.core.data.metadata import JobMetadata
 
 class Job(object):
 
-    def __init__(self,
-                 job_id: str,
+    def __init__(self, *,
+                 job_id: str = None,
                  metadata: JobMetadata = None,
                  job_config: JobConfig = None,
                  train_config: TrainConfig = None,
                  aggregate_config: AggregateConfig = None):
         super(Job, self).__init__()
+        self.module = None
         self.job_id = job_id
         self.metadata = metadata
         self.job_config = job_config

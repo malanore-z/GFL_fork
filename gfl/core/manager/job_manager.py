@@ -1,43 +1,15 @@
 
 
 import gfl.core.lfs as lfs
-from gfl.conf.node import GflNode
-from gfl.core.data.config import *
-from gfl.core.data import Job, JobMetadata
+from gfl.core.data import Job
 from gfl.core.manager.manager import Manager
-from gfl.net import *
+from gfl.net import NetBroadcast
 
 
 class JobManager(Manager):
 
     @classmethod
-    def generate_job(cls, module,
-                     metadata: JobMetadata = JobMetadata(),
-                     job_config: JobConfig = JobConfig(),
-                     train_config: TrainConfig = TrainConfig(),
-                     aggregate_config: AggregateConfig = AggregateConfig()) -> Job:
-        """
-
-        :param module:
-        :param metadata:
-        :param job_config:
-        :param train_config:
-        :param aggregate_config:
-        :return:
-        """
-        job_id = cls.generate_job_id()
-        if metadata.owner is None:
-            metadata.owner = GflNode.address
-        metadata.id = job_id
-        job = Job(job_id=job_id,
-                  metadata=metadata,
-                  job_config=job_config,
-                  train_config=train_config,
-                  aggregate_config=aggregate_config)
-        lfs.save_job(job, module)
-        return job
-
-    @classmethod
-    def submit_job(cls, job_id):
-        job = lfs.load_job_zip(job_id)
-        NetBroadcast.broadcast_job(job_id, job)
+    def submit_job(cls, job: Job):
+        lfs.save_job(job)
+        job_file = lfs.load_job_zip(job.job_id)
+        NetBroadcast.broadcast_job(job.job_id, job_file)
