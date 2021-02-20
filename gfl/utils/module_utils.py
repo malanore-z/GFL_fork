@@ -32,7 +32,10 @@ class ModuleUtils(object):
         :param name: module name
         :return: module
         """
-        module_name = path.replace("/", ".") + "." + name
+        if name is not None:
+            module_name = path.replace("/", ".") + "." + name
+        else:
+            module_name = path.replace("/", ".")
         return importlib.import_module(module_name)
 
     @classmethod

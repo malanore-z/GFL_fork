@@ -59,7 +59,7 @@ class JobPath(Path):
         self.__train_config_file = PathUtils.join(self.__root_dir, "job", "train.json")
         self.__aggregate_config_file = PathUtils.join(self.__root_dir, "job", "aggregate.json")
         self.__module_name = "fl_model"
-        self.__module_dir = PathUtils.join(self.__root_dir, "job", self.__module_name)
+        self.__module_dir = PathUtils.join(self.__root_dir, "job")
         self.__metrics_dir = PathUtils.join(self.__root_dir, "results", "metrics")
         self.__params_dir = PathUtils.join(self.__root_dir, "results", "params")
         self.__reports_dir = PathUtils.join(self.__root_dir, "results", "reports")
@@ -140,7 +140,7 @@ class DatasetPath(Path):
         self.__config_dir = PathUtils.join(self.__root_dir, "dataset")
         self.__dataset_config_file = PathUtils.join(self.__root_dir, "dataset", "dataset.json")
         self.__module_name = "fl_dataset"
-        self.__module_dir = PathUtils.join(self.__root_dir, "dataset", self.__module_name)
+        self.__module_dir = PathUtils.join(self.__root_dir, "dataset")
 
     def makedirs(self):
         os.makedirs(self.__root_dir, exist_ok=True)

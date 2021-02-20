@@ -4,13 +4,16 @@ __all__ = [
     "load_dataset_zip",
     "save_dataset_zip",
     "load_job",
+    "load_all_job",
     "save_job",
     "load_job_zip",
     "save_job_zip"
 ]
 
 import json
+import os
 from io import BytesIO
+from typing import NoReturn, List
 
 from gfl.conf import GflConf
 from gfl.core.data import *
@@ -22,7 +25,7 @@ from gfl.utils import ModuleUtils, PathUtils, ZipUtils
 
 
 def __load_json(file_path, clazz):
-    if PathUtils.exists(file_path):
+    if not PathUtils.exists(file_path):
         return None
     with open(file_path, "r") as f:
         d = json.loads(f.read())
@@ -34,7 +37,7 @@ def __save_json(file_path, obj):
         f.write(json.dumps(obj.to_dict(), indent=4, ensure_ascii=False))
 
 
-def load_dataset(dataset_id: str):
+def load_dataset(dataset_id: str) -> Dataset:
     """
     Load dataset from JSON file.
 
@@ -52,7 +55,7 @@ def load_dataset(dataset_id: str):
     return dataset
 
 
-def save_dataset(dataset: Dataset, module=None):
+def save_dataset(dataset: Dataset, module=None) -> NoReturn:
     """
     Save dataset
 
@@ -65,10 +68,10 @@ def save_dataset(dataset: Dataset, module=None):
     dataset_path.makedirs()
     __save_json(dataset_path.metadata_file, dataset.metadata)
     __save_json(dataset_path.dataset_config_file, dataset.dataset_config)
-    ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.config_dir)
+    ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.module_dir)
 
 
-def load_dataset_zip(dataset_id: str):
+def load_dataset_zip(dataset_id: str) -> File:
     """
     Load dataset from a ZIP file.
 
@@ -80,12 +83,12 @@ def load_dataset_zip(dataset_id: str):
     if GflConf.get_property("ipfs.enabled"):
         file_obj.seek(0)
         ipfs_hash = Ipfs.put(file_obj.read())
-        return File(ipfs_hash=ipfs_hash)
+        return File(ipfs_hash=ipfs_hash, file=None)
     else:
-        return File(file=file_obj)
+        return File(ipfs_hash=None, file=file_obj)
 
 
-def save_dataset_zip(dataset_id: str, dataset: File):
+def save_dataset_zip(dataset_id: str, dataset: File) -> NoReturn:
     """
     Save the zip file of the dataset.
 
@@ -100,7 +103,7 @@ def save_dataset_zip(dataset_id: str, dataset: File):
     ZipUtils.extract(file_obj, dataset_path.root_dir)
 
 
-def load_job(job_id: str):
+def load_job(job_id: str) -> Job:
     """
     Load job from JSON file.
 
@@ -124,7 +127,21 @@ def load_job(job_id: str):
     return job
 
 
-def save_job(job: Job, module=None):
+def load_all_job() -> List[Job]:
+    job_dir = PathUtils.join(GflConf.data_dir, "job")
+    jobs = []
+    for filename in os.listdir(job_dir):
+        path = PathUtils.join(job_dir, filename)
+        if os.path.isdir(path):
+            try:
+                job = load_job(filename)
+                jobs.append(job)
+            except:
+                pass
+    return jobs
+
+
+def save_job(job: Job, module=None) -> NoReturn:
     """
     Save job
 
@@ -142,7 +159,7 @@ def save_job(job: Job, module=None):
     ModuleUtils.submit_module(module, job_path.module_name, job_path.module_dir)
 
 
-def load_job_zip(job_id: str):
+def load_job_zip(job_id: str) -> File:
     """
     Load job from a ZIP file.
 
@@ -159,7 +176,7 @@ def load_job_zip(job_id: str):
         return File(file=file_obj)
 
 
-def save_job_zip(job_id: str, job: File):
+def save_job_zip(job_id: str, job: File) -> NoReturn:
     """
     Save the zip file of the job.
 

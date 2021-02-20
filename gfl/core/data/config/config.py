@@ -25,6 +25,8 @@ class Config(PlainObject):
             return ConfigObject.new_object(module=self.module, obj=obj, **kwargs)
 
     def _get_config_object(self, obj: ConfigObject, strategy_type, *args, **kwargs):
+        if obj is None:
+            return None
         if obj.is_instance:
             if obj.is_builtin:
                 strategy: StrategyAdapter = strategy_type(obj.name)

@@ -1,3 +1,5 @@
+import logging.config
+
 import yaml
 
 from gfl.utils import PathUtils
@@ -50,6 +52,10 @@ class GflConf(object, metaclass=GflConfMetadata):
         """
         with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "r") as f:
             cls.readonly_props = yaml.safe_load(f.read())
+
+    @classmethod
+    def load_logging_conf(cls):
+        logging.config.fileConfig(PathUtils.join(cls.__home_dir, "logging.conf"))
 
     @classmethod
     def get_property(cls, key, default=None):

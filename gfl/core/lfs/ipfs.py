@@ -3,7 +3,6 @@ from pathlib import PurePath
 import ipfshttpclient
 
 from gfl.conf import GflConf
-from gfl.core.lfs.path import cache_dir
 from gfl.utils.path_utils import PathUtils
 
 
@@ -34,8 +33,8 @@ class Ipfs(object):
         :return: content read from the downloaded file
         """
         client = ipfshttpclient.connect(ipfs_addr)
-        client.get(ipfs_hash, target=cache_dir())
-        path = PathUtils.join(cache_dir(), ipfs_hash)
+        client.get(ipfs_hash, target=GflConf.cache_dir)
+        path = PathUtils.join(GflConf.cache_dir, ipfs_hash)
         with open(path, "rb") as f:
             ret = f.read()
         return ret

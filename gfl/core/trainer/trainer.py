@@ -43,7 +43,7 @@ class Trainer(object):
     def _parse_train_config(self, train_config: TrainConfig):
         self.model = train_config.get_model()
         self.optimizer = train_config.get_optimizer(self.model)
-        self.lr_scheduler = train_config.get_optimizer(self.optimizer)
+        self.lr_scheduler = train_config.get_lr_scheduler(self.optimizer)
         self.loss = train_config.get_loss()
         self.epoch = train_config.get_epoch()
         self.batch_size = train_config.get_batch_size()

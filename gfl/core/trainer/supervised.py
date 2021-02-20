@@ -18,6 +18,7 @@ class SupervisedTrainer(Trainer):
         super(SupervisedTrainer, self)._pre_train()
         self.train_dataloader = DataLoader(self.dataset, batch_size=self.batch_size)
         self.val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size)
+        self.model = self.model.to(gfl.device)
 
     def _train(self):
         self.history = {
@@ -30,6 +31,10 @@ class SupervisedTrainer(Trainer):
             t_loss, t_correct, t_total = self.__epoch_train(self.train_dataloader)
             with torch.no_grad():
                 v_loss, v_correct, v_total = self.__epoch_train(self.val_dataloader)
+            print("EPOCH %d OF %d" % (e, self.epoch))
+            print("\tTrain Loss: %s, Acc: %s" % (t_loss, t_correct / t_total))
+            print("\tVal   Loss: %s, Acc: %s" % (v_loss, v_correct / v_total), flush=True)
+
             self.history["train_loss"].append(t_loss)
             self.history["train_acc"].append(t_correct / t_total)
             self.history["val_loss"].append(v_loss)
