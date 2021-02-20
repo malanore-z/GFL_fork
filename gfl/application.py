@@ -34,7 +34,6 @@ class Application(object):
         GflConf.reload()
         GflNode.load_node()
 
-
         if GflConf.get_property("standalone.enabled"):
             server_number = GflConf.get_property("standalone.server_number")
             client_number = GflConf.get_property("standalone.client_number")
