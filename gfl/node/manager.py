@@ -13,6 +13,10 @@ class NodeManager(object):
         self.node = GflNode.default_node if node is None else node
         self.role = role
 
-    def run(self,):
+    def run(self):
         jobs = JobManager.unfinished_jobs()
+        self.listen_job()
+        pass
+
+    def listen_job(self):
         pass

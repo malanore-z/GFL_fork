@@ -2,15 +2,16 @@ import abc
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
+from gfl.net import NetSend, NetFetch, NetReceive, NetBroadcast
 
 
 class JobScheduler(object):
 
-    def __init__(self, *, node, job):
+    def __init__(self, *, node, job, step=0):
         super(JobScheduler, self).__init__()
         self.node = node
         self.job = job
-        self.step = 0
+        self.step = step
 
     @abc.abstractmethod
     def start(self):
@@ -27,8 +28,8 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node, job):
-        super(JobAggregateScheduler, self).__init__(node=node, job=job)
+    def __init__(self, *, node, job, step=0):
+        super(JobAggregateScheduler, self).__init__(node=node, job=job, step=step)
 
     def start(self):
         pass
@@ -42,8 +43,8 @@ class JobAggregateScheduler(JobScheduler):
 
 class JobTrainScheduler(JobScheduler):
 
-    def __init__(self, node, job):
-        super(JobTrainScheduler, self).__init__(node=node, job=job)
+    def __init__(self, node, job, step=0):
+        super(JobTrainScheduler, self).__init__(node=node, job=job, step=step)
 
     def start(self):
         pass
@@ -59,5 +60,5 @@ class JobTrainScheduler(JobScheduler):
 
     def train(self, step):
         trainer_clazz = self.job.job_config.get_trainer()
-        trainer = trainer_clazz(job=self.job, step=0, client=self.node)
+        trainer = trainer_clazz(job=self.job, step=step, client=self.node)
         trainer.train()

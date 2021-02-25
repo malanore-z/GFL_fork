@@ -12,3 +12,7 @@ class StandaloneReceive(NetReceive):
     @classmethod
     def receive_partial_params(cls, client: str, job_id: str, step: int) -> File:
         pass
+
+    @classmethod
+    def receive_cmd_register(cls, job_id: str):
+        pass
