@@ -2,16 +2,17 @@ import abc
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
+from gfl.core.data.job import Job
 from gfl.net import NetSend, NetFetch, NetReceive, NetBroadcast
 
 
 class JobScheduler(object):
 
-    def __init__(self, *, node, job, step=0):
+    def __init__(self, *, node: GflNode, job: Job):
         super(JobScheduler, self).__init__()
         self.node = node
         self.job = job
-        self.step = step
+        self.step = 0
 
     @abc.abstractmethod
     def start(self):
@@ -23,13 +24,25 @@ class JobScheduler(object):
 
     @abc.abstractmethod
     def stop(self):
+        pass
+
+    @abc.abstractmethod
+    def is_available(self):
+        pass
+
+    @abc.abstractmethod
+    def is_running(self):
+        pass
+
+    @abc.abstractmethod
+    def is_finished(self):
         pass
 
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node, job, step=0):
-        super(JobAggregateScheduler, self).__init__(node=node, job=job, step=step)
+    def __init__(self, *, node: GflNode, job: Job):
+        super(JobAggregateScheduler, self).__init__(node=node, job=job)
 
     def start(self):
         pass
@@ -38,13 +51,22 @@ class JobAggregateScheduler(JobScheduler):
         pass
 
     def stop(self):
+        pass
+
+    def is_available(self):
+        pass
+
+    def is_running(self):
+        pass
+
+    def is_finished(self):
         pass
 
 
 class JobTrainScheduler(JobScheduler):
 
-    def __init__(self, node, job, step=0):
-        super(JobTrainScheduler, self).__init__(node=node, job=job, step=step)
+    def __init__(self, *, node: GflNode, job: Job):
+        super(JobTrainScheduler, self).__init__(node=node, job=job)
 
     def start(self):
         pass
@@ -55,8 +77,17 @@ class JobTrainScheduler(JobScheduler):
     def stop(self):
         pass
 
-    def register(self):
+    def is_available(self):
         pass
+
+    def is_running(self):
+        pass
+
+    def is_finished(self):
+        pass
+
+    def register(self):
+        NetSend.send_cmd_register(self.job.job_id, self.node.address, self.node.pub_key, self.job.dataset.dataset_id)
 
     def train(self, step):
         trainer_clazz = self.job.job_config.get_trainer()

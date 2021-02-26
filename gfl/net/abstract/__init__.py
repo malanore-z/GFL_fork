@@ -1,5 +1,6 @@
 __all__ = [
     "File",
+    "NodeInfo",
     "NetBroadcast",
     "NetFetch",
     "NetReceive",
@@ -9,6 +10,7 @@ __all__ = [
 ]
 
 from gfl.core.lfs.types import File
+from gfl.net.abstract.types import NodeInfo
 
 from gfl.net.abstract.broadcast import NetBroadcast
 from gfl.net.abstract.fetch import NetFetch
