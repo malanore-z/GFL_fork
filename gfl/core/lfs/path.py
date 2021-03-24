@@ -65,6 +65,7 @@ class JobPath(Path):
         self.__reports_dir = PathUtils.join(self.__root_dir, "results", "reports")
         self.__client_params_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "params")
         self.__client_word_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "work")
+        self.__global_params_dir = PathUtils.join(self.__root_dir, "round-%d", "global", "params")
 
     def makedirs(self):
         os.makedirs(self.__root_dir, exist_ok=True)
@@ -126,6 +127,10 @@ class JobPath(Path):
 
     def client_work_dir(self, round: int, address: str):
         return self.__client_word_dir % (round, address)
+
+    def global_params_dir(self, round: int):
+        return self.__global_params_dir % (round)
+
 
 
 class DatasetPath(Path):

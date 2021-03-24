@@ -16,6 +16,7 @@ class Trainer(object):
         self.job_start_time = TimeUtils.millis_time()
         self.step = step
         self.client = client
+        self.round = job.round
         self.job_id = job.job_id
         self.model = None
         self.optimizer = None
