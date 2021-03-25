@@ -3,10 +3,10 @@ import logging
 
 import torch
 import os
-from enum import Enum
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
 from gfl.core.lfs.path import *
+from gfl.core.manager.job_status import *
 
 
 class JobScheduler(object):
@@ -49,15 +49,15 @@ class JobTrainScheduler(JobScheduler):
 
     def __init__(self, node, job):
         super(JobTrainScheduler, self).__init__(node=node, job=job)
-        # status 标识当前任务的状态
-        self.status = None
+        # 标识当前任务的状态
+        self.__status = JobStatus.JOB_NOT_START
 
     def start(self):
         """
         启动一轮训练
         """
         # resources_not_already:0
-        self.status = JobStatus.RESOURCE_NOT_ALREADY
+        self.__status = JobStatus.RESOURCE_NOT_ALREADY
 
         job_id = self.job.job_id
         job_round = self.job.round
@@ -68,13 +68,13 @@ class JobTrainScheduler(JobScheduler):
             # 进行模型训练,并将 模型结果参数 保存
             self.train(model_params_path)
             # epoch_finished: 3
-            self.status = JobStatus.EPOCH_FINISHED
+            self.__status = JobStatus.EPOCH_FINISHED
 
     def status(self):
         """
         返回任务的当前状态
         """
-        return self.status
+        return self.__status
 
     def stop(self):
         pass
@@ -94,7 +94,7 @@ class JobTrainScheduler(JobScheduler):
 
         """
         # training: 2
-        self.status = JobStatus.TRAINING
+        self.__status = JobStatus.TRAINING
         trainer_clazz = self.job.job_config.get_trainer()
         trainer = trainer_clazz(job=self.job, step=self.step, client=self.node)
         # 加载当前的全局模型参数
@@ -120,20 +120,11 @@ class JobTrainScheduler(JobScheduler):
         # 判断是否存在模型参数文件，如果存在则返回。
         if os.path.exists(global_params_dir) and os.path.isfile(model_params_path):
             # resources_already:1
-            self.status = JobStatus.RESOURCE_ALREADY
+            self.__status = JobStatus.RESOURCE_ALREADY
             return model_params_path
         else:
             # 等待一段时间。在这段时间内获取到了模型参数文件，则返回
             # 还没写
             # 否则，认为当前模型参数文件已经无法获取
-            self.status = JobStatus.TRAIN_FAILED
+            self.__status = JobStatus.TRAIN_FAILED
             return None
-
-
-class JobStatus(Enum):
-    RESOURCE_NOT_ALREADY = 0
-    RESOURCE_ALREADY = 1
-    TRAINING = 2
-    EPOCH_FINISHED = 3
-    ALL_FINISHED = 4
-    TRAIN_FAILED = 5
