@@ -25,7 +25,9 @@ class Aggregator(object):
         work_dir = job_path.server_work_dir(self.step)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
-            pass
+            self._pre_aggregate()
+            self._aggregate()
+            self._post_aggregate()
         pass
 
     def _pre_aggregate(self):
