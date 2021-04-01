@@ -6,18 +6,22 @@ from typing import Any, Tuple, List, Set, Dict, _GenericAlias
 
 
 """
-支持的类型：
-1. 基本类型
+Supported type:
+1. Fundamental type
     bool, int, float, str
-2. 容器类型
+2. Container type
     Tuple[T], List[T], Set[T], Dict[K, V]
-3. 任意类型
+3. Arbitrary type
     Any
 
-方法不对传入参数做校验， 认为传入参数类型可以合法进行转换
-不支持多继承
-不支持不规范的类型声明， 如Dict, tuple, bytes等
-不支持子类覆盖父类同名属性
+Method does not check the type of the passed parameter and assumes that the type of the 
+passed parameter can be legally converted.
+
+Multiple inheritance is not supported.
+
+Do not support non-standard type declarations such as Dict, tuple, bytes, etc.
+
+There is no support for subclasses to override superclass properties with the same name.
 """
 
 
@@ -43,6 +47,7 @@ class ClassField(object):
                 self.sub_types.append(ClassField(None, a))
 
     def encode(self, o):
+
         if o is None:
             return o
         if self.base_type == Any:

@@ -5,13 +5,15 @@ import torch
 import os
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
+from gfl.core.data.job import Job
+from gfl.net import NetSend, NetFetch, NetReceive, NetBroadcast
 from gfl.core.lfs.path import *
 from gfl.core.manager.job_status import *
 
 
 class JobScheduler(object):
 
-    def __init__(self, *, node, job):
+    def __init__(self, *, node: GflNode, job: Job):
         super(JobScheduler, self).__init__()
         self.node = node
         self.job = job
@@ -29,10 +31,22 @@ class JobScheduler(object):
     def stop(self):
         pass
 
+    @abc.abstractmethod
+    def is_available(self):
+        pass
+
+    @abc.abstractmethod
+    def is_running(self):
+        pass
+
+    @abc.abstractmethod
+    def is_finished(self):
+        pass
+
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node, job):
+    def __init__(self, *, node: GflNode, job: Job):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
 
     def start(self):
@@ -44,10 +58,19 @@ class JobAggregateScheduler(JobScheduler):
     def stop(self):
         pass
 
+    def is_available(self):
+        pass
+
+    def is_running(self):
+        pass
+
+    def is_finished(self):
+        pass
+
 
 class JobTrainScheduler(JobScheduler):
 
-    def __init__(self, node, job):
+    def __init__(self, *, node: GflNode, job: Job):
         super(JobTrainScheduler, self).__init__(node=node, job=job)
         # 标识当前任务的状态
         self.__status = JobStatus.JOB_NOT_START
@@ -79,8 +102,17 @@ class JobTrainScheduler(JobScheduler):
     def stop(self):
         pass
 
-    def register(self):
+    def is_available(self):
         pass
+
+    def is_running(self):
+        pass
+
+    def is_finished(self):
+        pass
+
+    def register(self):
+        NetSend.send_cmd_register(self.job.job_id, self.node.address, self.node.pub_key, self.job.dataset.dataset_id)
 
     def train(self, model_params_path):
         """

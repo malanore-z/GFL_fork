@@ -14,6 +14,7 @@ class Trainer(object):
     def __init__(self, job: Job, step: int, client: GflNode = GflNode.default_node):
         super(Trainer, self).__init__()
         self.job_start_time = TimeUtils.millis_time()
+        self.job = job
         self.step = step
         self.client = client
         self.round = job.round
@@ -39,12 +40,16 @@ class Trainer(object):
             self._post_train()
 
     def validate(self):
-        pass
+        job_path = JobPath(self.job_id)
+        work_dir = job_path.client_work_dir(self.step, self.client.address)
+        os.makedirs(work_dir, exist_ok=True)
+        with WorkDirContext(work_dir):
+            self._validate()
 
     def _parse_train_config(self, train_config: TrainConfig):
         self.model = train_config.get_model()
         self.optimizer = train_config.get_optimizer(self.model)
-        self.lr_scheduler = train_config.get_optimizer(self.optimizer)
+        self.lr_scheduler = train_config.get_lr_scheduler(self.optimizer)
         self.loss = train_config.get_loss()
         self.epoch = train_config.get_epoch()
         self.batch_size = train_config.get_batch_size()

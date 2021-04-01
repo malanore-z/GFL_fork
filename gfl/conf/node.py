@@ -37,7 +37,6 @@ class GflNodeMetadata(type):
 
 # 签名：如果数据被更改，则签名会被更改
 class Sign(object):
-
     def __get__(self, instance, owner):
         if instance is not None:
             self.key = instance.priv_key
@@ -53,7 +52,6 @@ class Sign(object):
         encoded_message = encode_defunct(hexstr=message.hex())
         signed_message = w3.eth.account.sign_message(encoded_message, self.key)
         return signed_message.signature.hex()
-
 
 class Decrypt(object):
 
@@ -152,6 +150,13 @@ class GflNode(object, metaclass=GflNodeMetadata):
     # 返回签名地址，从签名中返回。签名：如果数据被更改，则签名会被更改
     @classmethod
     def recover(cls, message: AnyStr, signature: str) -> str:
+        """
+        Get the address of the node that signed the given message.
+
+        :param message: the message that was signed
+        :param signature: the signature of the message
+        :return: the address of the node
+        """
         if type(message) == str:
             message = message.encode("utf8")
         if type(message) != bytes:
@@ -162,6 +167,13 @@ class GflNode(object, metaclass=GflNodeMetadata):
     @classmethod
     def encrypt(cls, plain: AnyStr, pub_key) -> bytes:
         # 使用 pub_key 公钥，进行加密
+        """
+        Encrypt with receiver's public key
+
+        :param plain: data to encrypt
+        :param pub_key: public key
+        :return: encrypted data
+        """
         if type(plain) == str:
             plain = plain.encode("utf8")
         if type(plain) != bytes:
