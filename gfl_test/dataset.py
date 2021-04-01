@@ -14,3 +14,7 @@ class MnistDataset(datasets.MNIST):
 
 abs_path = os.path.abspath("dataset")
 mnist_dataset = MnistDataset(abs_path)
+
+if __name__ == '__main__':
+    abs_path = os.path.abspath("dataset")
+    print(abs_path)

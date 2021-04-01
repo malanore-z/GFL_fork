@@ -35,7 +35,7 @@ class GflNodeMetadata(type):
             return None
         return cls.default_node.priv_key
 
-
+# 签名：如果数据被更改，则签名会被更改
 class Sign(object):
 
     def __get__(self, instance, owner):
@@ -111,14 +111,21 @@ class GflNode(object, metaclass=GflNodeMetadata):
         :return:
         """
         node = cls.__new_node()
-        key_dir = PathUtils.join(GflConf.home_dir, "key")
+        key_dir = PathUtils.join(GflConf.home_dir, "key")   # /Users/YY/.gfl/key
         os.makedirs(key_dir, exist_ok=True)
-        key_file = PathUtils.join(key_dir, "key.json")
+        key_file = PathUtils.join(key_dir, "key.json")  # /Users/YY/.gfl/key/key.json
         cls.__save_node(node, key_file)
+        # key.json中的内容如下
+        # {
+        #     "address": "a8C03cEBFc6C11C1707032590adf2ACF4ccAc655",
+        #     "pub_key": "d2a95fb211c91f79d052c3c927f51b22893a3b3f7a28090f32d03fc7224bdca0be91173445f71bf1bf91d0fee52ee7c805b7b10dc1b12fa2ed5267b818eb1bc8",
+        #     "priv_key": "708d8f67deb461bdf2a3c9c2d82584b8304cbad32398a5ce5706a8e45f5210bf"
+        # }
         cls.default_node = node
 
     @classmethod
     def add_standalone_node(cls) -> NoReturn:
+        # 添加【一个】standalone_node
         node = cls.__new_node()
         for i in range(100):
             # 限制最多100个模拟节点， 防止此处出现死循环
@@ -132,7 +139,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
     @classmethod
     def load_node(cls) -> NoReturn:
         """
-        加载节点目录种的key文件，创建default_node和standalone_nodes对象
+        加载节点目录中的key文件，创建default_node和standalone_nodes对象
         :return:
         """
         key_dir = PathUtils.join(GflConf.home_dir, "key")
@@ -142,6 +149,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
                 node_idx = int(filename[5:-5])
                 cls.standalone_nodes[node_idx] = cls.__load_node(PathUtils.join(key_dir, filename))
 
+    # 返回签名地址，从签名中返回。签名：如果数据被更改，则签名会被更改
     @classmethod
     def recover(cls, message: AnyStr, signature: str) -> str:
         if type(message) == str:
@@ -153,6 +161,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
 
     @classmethod
     def encrypt(cls, plain: AnyStr, pub_key) -> bytes:
+        # 使用 pub_key 公钥，进行加密
         if type(plain) == str:
             plain = plain.encode("utf8")
         if type(plain) != bytes:
