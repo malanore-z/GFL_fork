@@ -1,5 +1,7 @@
 import abc
 import logging
+import os
+from typing import List
 
 import torch
 import os
@@ -9,6 +11,9 @@ from gfl.core.data.job import Job
 from gfl.net import NetSend, NetFetch, NetReceive, NetBroadcast
 from gfl.core.lfs.path import *
 from gfl.core.manager.job_status import *
+from gfl.core.trainer import SupervisedTrainer
+from gfl.core.lfs.path import JobPath
+from gfl.core.manager.sql_execute import *
 
 
 class JobScheduler(object):
@@ -48,8 +53,19 @@ class JobAggregateScheduler(JobScheduler):
 
     def __init__(self, *, node: GflNode, job: Job):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
+        self.client_model_paths = None
 
     def start(self):
+        job_id, cur_round = self.job.job_id, self.job.cur_round
+        self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        # 从本地文件系统中加载当前job对应的模型，此时需要判断收集到的模型数量是否达到目标要求
+        # 若在一定时间内当前聚合的模型数量仍然未达到目标要求则先暂停当前job
+
+        # 当收集到的模型达到目标要求时，加载模型
+
+        # 使用聚合算法对当前收集到的模型进行聚合
+
+        # 存储聚合后的模型，并将聚合后的模型发送给其他节点
         pass
 
     def status(self):
@@ -67,6 +83,54 @@ class JobAggregateScheduler(JobScheduler):
     def is_finished(self):
         pass
 
+    def aggregate(self):
+        pass
+
+    def is_models_avaliable(self, target_num):
+        """
+        统计指定文件夹中模型文件的数量
+        Parameters
+        ----------
+        target_num: 目标的模型数量
+
+        Returns 是否收集到指定数量的模型
+        -------
+
+        """
+        # 获取当前的训练轮次
+        job_id = self.job.job_id
+        cur_round = self.job.round
+        path_util = JobPath(job_id)
+        # 全局模型的输出路径
+        global_model_path = path_util.global_params_dir(cur_round)
+        # 客户端模型的获取路径
+        client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        avaliable_client_model_paths = []
+        avaliable_client_num = 0
+        for client_model_path in client_model_paths:
+            if os.path.exists(client_model_path):
+                avaliable_client_model_paths.append(client_model_path)
+                avaliable_client_num += 1
+        if avaliable_client_num >= target_num:
+            return avaliable_client_model_paths
+        else:
+            return None
+
+
+
+    def get_client_model_paths(self, job_id, cur_round) -> List[str]:
+        """
+        获取客户端的模型存储路径
+        Returns
+        -------
+
+        """
+        path_util = JobPath(job_id)
+        client_model_paths = []
+        client_infos = get_client_by_job_id(job_id)
+        for client_info in client_infos:
+            client_model_paths.append(path_util.client_params_dir(cur_round, client_info.address) + f"/{job_id}.pth")
+        return client_model_paths
 
 class JobTrainScheduler(JobScheduler):
 

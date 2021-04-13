@@ -8,7 +8,8 @@ __all__ = [
     "get_params",
     "save_kv",
     "save_client",
-    "save_params"
+    "save_params",
+    "get_client_by_job_id"
 ]
 
 from collections import namedtuple
@@ -60,6 +61,14 @@ def get_kv(job_id: str, key: str):
 
 def save_client(job_id: str, client: ClientEntity):
     __save(job_id, insert_job_client, client.address, client.dataset, client.pub_key)
+
+
+def get_client_by_job_id(job_id: str):
+    entities = __get(job_id, select_client_by_job_id)
+    ret = []
+    for e in entities:
+        ret.append(ClientEntity(address=e[0], dataset=e[1], pub_key=e[2]))
+    return ret
 
 
 def get_client(job_id: str, address: str):

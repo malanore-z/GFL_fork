@@ -14,7 +14,7 @@ class Job(object):
         super(Job, self).__init__()
         self.module = None
         self.job_id = job_id
-        self.round = 0
+        self.cur_round = 0
         self.metadata = metadata
         self.job_config = job_config
         self.train_config = train_config

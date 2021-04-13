@@ -134,9 +134,11 @@ class JobPath(Path):
     def server_work_dir(self, step: int):
         return self.client_work_dir(step, "global")
 
-    def global_params_dir(self, round: int):
-        return self.__global_params_dir % (round)
+    def client_work_dir(self, round: int, address: str):
+        return self.__client_word_dir % (round, address)
 
+    def global_params_dir(self, round: int):
+        return self.__global_params_dir % round
 
 
 class DatasetPath(Path):
