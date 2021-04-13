@@ -50,7 +50,7 @@ class SupervisedTrainer(Trainer):
         client_params_dir = JobPath(self.job_id).client_work_dir(self.round, self.client.address)
         # 保存 job_id.pth为文件名
         path = PathUtils.join(client_params_dir, self.job_id + '.pth')
-        path = client_params_dir + 'job_id.pth'
+        # path = client_params_dir + 'job_id.pth'
         torch.save(self.model.state_dict(), path)
 
     def _validate(self):

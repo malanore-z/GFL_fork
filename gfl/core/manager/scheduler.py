@@ -132,6 +132,7 @@ class JobAggregateScheduler(JobScheduler):
             client_model_paths.append(path_util.client_params_dir(cur_round, client_info.address) + f"/{job_id}.pth")
         return client_model_paths
 
+
 class JobTrainScheduler(JobScheduler):
 
     def __init__(self, *, node: GflNode, job: Job):
@@ -147,7 +148,7 @@ class JobTrainScheduler(JobScheduler):
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
 
         job_id = self.job.job_id
-        job_round = self.job.round
+        job_round = self.job.cur_round
 
         # model_params_path: 保存全局模型参数的路径
         model_params_path = self.get_model_params_path(job_id, job_round)
@@ -220,7 +221,7 @@ class JobTrainScheduler(JobScheduler):
             return model_params_path
         else:
             # 等待一段时间。在这段时间内获取到了模型参数文件，则返回
-            # 还没写
+            # 暂时不考虑这种情况
             # 否则，认为当前模型参数文件已经无法获取
             self.__status = JobStatus.TRAIN_FAILED
             return None
