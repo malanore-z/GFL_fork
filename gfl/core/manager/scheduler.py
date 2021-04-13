@@ -1,5 +1,6 @@
 import abc
 import os
+from enum import Enum
 from typing import List
 
 from gfl.conf import GflConf
@@ -16,6 +17,7 @@ class JobScheduler(object):
         self.node = node
         self.job = job
         self.step = 0
+        self.status = JobStatus.RESOURCE_NOT_ALREADY
 
     @abc.abstractmethod
     def start(self):
@@ -32,14 +34,25 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node, job):
+    def __init__(self, *, node, job, target_num):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.client_model_paths = None
+        self.target_num = target_num
 
     def start(self):
-        job_id, cur_round = self.job.job_id, self.job.cur_round
+        """
+        启动一轮训练
+        Returns
+        -------
+
+        """
+        job_id, cur_round = self.job.job_id, self.job.round
         self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+
+        avaliable_model_paths = self.get_avaliable_models()
         # 从本地文件系统中加载当前job对应的模型，此时需要判断收集到的模型数量是否达到目标要求
+        if len(avaliable_model_paths) >= self.target_num:
+
         # 若在一定时间内当前聚合的模型数量仍然未达到目标要求则先暂停当前job
 
         # 当收集到的模型达到目标要求时，加载模型
@@ -55,8 +68,35 @@ class JobAggregateScheduler(JobScheduler):
     def stop(self):
         pass
 
-    def aggregate(self):
-        pass
+    def aggregate(self, client_model_paths):
+        """
+        加载从client获得的模型参数，调用aggregator进行模型的聚合
+        Parameters
+        ----------
+        client_model_paths: List[str]
+            保存模型路径的List
+        Returns
+        -------
+
+        """
+        self.status = JobStatus.TRAINING
+        client_models = []
+        aggregator_clazz = self.job.job_config.get_aggregator()
+        aggregator = aggregator_clazz(job=self.job)
+
+    def get_avaliable_models(self):
+        """
+        获得从客户端已经接收到的模型
+        Returns List[str]
+            返回的是对包含对应模型文件路径的List
+        -------
+
+        """
+        avaliable_client_model_paths = []
+        for client_model_path in self.client_model_paths:
+            if os.path.exists(client_model_path):
+                avaliable_client_model_paths.append(client_model_path)
+        return avaliable_client_model_paths
 
     def is_models_avaliable(self, target_num):
         """
@@ -69,17 +109,9 @@ class JobAggregateScheduler(JobScheduler):
         -------
 
         """
-        # 获取当前的训练轮次
-        job_id = self.job.job_id
-        cur_round = self.job.round
-        path_util = JobPath(job_id)
-        # 全局模型的输出路径
-        global_model_path = path_util.global_params_dir(cur_round)
-        # 客户端模型的获取路径
-        client_model_paths = self.get_client_model_paths(job_id, cur_round)
         avaliable_client_model_paths = []
         avaliable_client_num = 0
-        for client_model_path in client_model_paths:
+        for client_model_path in self.client_model_paths:
             if os.path.exists(client_model_path):
                 avaliable_client_model_paths.append(client_model_path)
                 avaliable_client_num += 1
@@ -88,9 +120,8 @@ class JobAggregateScheduler(JobScheduler):
         else:
             return None
 
-
-
-    def get_client_model_paths(self, job_id, cur_round) -> List[str]:
+    @staticmethod
+    def get_client_model_paths(job_id, cur_round) -> List[str]:
         """
         获取客户端的模型存储路径
         Returns
@@ -171,3 +202,11 @@ class JobTrainScheduler(JobScheduler):
 
         """
         pass
+
+class JobStatus(Enum):
+    RESOURCE_NOT_ALREADY = 0
+    RESOURCE_ALREADY = 1
+    TRAINING = 2
+    EPOCH_FINISHED = 3
+    ALL_FINISHED = 4
+    TRAIN_FAILED = 5
