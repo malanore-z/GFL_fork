@@ -99,7 +99,7 @@ class JobAggregateScheduler(JobScheduler):
         """
         # 获取当前的训练轮次
         job_id = self.job.job_id
-        cur_round = self.job.round
+        cur_round = self.job.cur_round
         path_util = JobPath(job_id)
         # 全局模型的输出路径
         global_model_path = path_util.global_params_dir(cur_round)
@@ -115,8 +115,6 @@ class JobAggregateScheduler(JobScheduler):
             return avaliable_client_model_paths
         else:
             return None
-
-
 
     def get_client_model_paths(self, job_id, cur_round) -> List[str]:
         """
