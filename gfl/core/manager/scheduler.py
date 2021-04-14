@@ -51,25 +51,38 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job: Job):
+    def __init__(self, *, node: GflNode, job, target_num):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.client_model_paths = None
+        self.target_num = target_num
+        self.avaliable_models = set()
+        self.client_model_params = []
+        self.__status = JobStatus.JOB_NOT_START
 
     def start(self):
+        """
+        启动一轮训练
+        Returns
+        -------
+
+        """
         job_id, cur_round = self.job.job_id, self.job.cur_round
-        self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
-        # 从本地文件系统中加载当前job对应的模型，此时需要判断收集到的模型数量是否达到目标要求
-        # 若在一定时间内当前聚合的模型数量仍然未达到目标要求则先暂停当前job
-
-        # 当收集到的模型达到目标要求时，加载模型
-
-        # 使用聚合算法对当前收集到的模型进行聚合
-
-        # 存储聚合后的模型，并将聚合后的模型发送给其他节点
-        pass
+        # 获取客户端模型的存储路径
+        if self.client_model_paths is None:
+            self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        # 获得客户端已经准备好的模型的存储路径，保存到 avaliable_models 中
+        self.get_avaliable_models()
+        # 达到阈值
+        if len(self.avaliable_models) >= self.target_num:
+            self.__status = JobStatus.RESOURCE_ALREADY
+            # 使用聚合算法对当前收集到的模型进行聚合
+            self.aggregate(list(self.avaliable_models))
 
     def status(self):
-        pass
+        """
+        返回任务的当前状态
+        """
+        return self.__status
 
     def stop(self):
         pass
@@ -83,40 +96,65 @@ class JobAggregateScheduler(JobScheduler):
     def is_finished(self):
         pass
 
-    def aggregate(self):
-        pass
-
-    def is_models_avaliable(self, target_num):
+    def aggregate(self, client_model_paths):
         """
-        统计指定文件夹中模型文件的数量
+        加载从client获得的模型参数，调用aggregator进行模型的聚合
         Parameters
         ----------
-        target_num: 目标的模型数量
-
-        Returns 是否收集到指定数量的模型
+        client_model_paths: List[str]
+            保存模型路径的List
+        Returns
         -------
 
         """
-        # 获取当前的训练轮次
-        job_id = self.job.job_id
-        cur_round = self.job.cur_round
-        path_util = JobPath(job_id)
-        # 全局模型的输出路径
-        global_model_path = path_util.global_params_dir(cur_round)
-        # 客户端模型的获取路径
-        client_model_paths = self.get_client_model_paths(job_id, cur_round)
-        avaliable_client_model_paths = []
-        avaliable_client_num = 0
+        self.__status = JobStatus.TRAINING
+        # 加载从client获得的模型参数
         for client_model_path in client_model_paths:
-            if os.path.exists(client_model_path):
-                avaliable_client_model_paths.append(client_model_path)
-                avaliable_client_num += 1
-        if avaliable_client_num >= target_num:
-            return avaliable_client_model_paths
-        else:
-            return None
+            try:
+                client_model_param = torch.load(client_model_path)
+                self.client_model_params.append(client_model_param)
+            except:
+                raise ValueError(f"模型 {client_model_path} 加载失败")
+        # 调用aggregator进行模型的聚合
+        aggregator_clazz = self.job.job_config.get_aggregator()
+        aggregator = aggregator_clazz(job=self.job)
+        # aggregator._post_aggregate() 需要将训练好的模型进行保存
+        aggregator.aggregate(self.client_model_params)
 
-    def get_client_model_paths(self, job_id, cur_round) -> List[str]:
+    def get_avaliable_models(self):
+        """
+        获得从客户端已经接收到的模型
+        Returns List[str]
+            返回的是对包含对应模型文件路径的List
+        -------
+
+        """
+        for client_model_path in self.client_model_paths:
+            if os.path.exists(client_model_path):
+                self.avaliable_models.add(client_model_path)
+
+    # def is_models_avaliable(self, target_num):
+    #     """
+    #     统计指定文件夹中模型文件的数量
+    #     Parameters
+    #     ----------
+    #     target_num: 目标的模型数量
+    #
+    #     Returns 是否收集到指定数量的模型
+    #     -------
+    #
+    #     """
+    #     job_id, cur_round = self.job.job_id, self.job.cur_round
+    #     if self.client_model_paths is None:
+    #         self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+    #     self.get_avaliable_models()
+    #     if len(self.avaliable_models) < target_num:
+    #         return False
+    #     else:
+    #         return True
+
+    @staticmethod
+    def get_client_model_paths(job_id, cur_round) -> List[str]:
         """
         获取客户端的模型存储路径
         Returns

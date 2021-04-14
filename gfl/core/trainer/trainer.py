@@ -17,7 +17,7 @@ class Trainer(object):
         self.job = job
         self.step = step
         self.client = client
-        self.round = job.round
+        self.round = job.cur_round
         self.job_id = job.job_id
         self.model = None
         self.optimizer = None

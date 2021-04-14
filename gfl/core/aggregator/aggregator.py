@@ -20,19 +20,20 @@ class Aggregator(object):
         self.job_id = job.job_id
         self._parse_aggregate_config(job.aggregate_config)
 
-    def aggregate(self):
+    def aggregate(self, client_model_params):
         job_path = JobPath(self.job_id)
         work_dir = job_path.server_work_dir(self.step)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
-            pass
-        pass
+            self._pre_aggregate()
+            self._aggregate(client_model_params)
+            self._post_aggregate()
 
     def _pre_aggregate(self):
         pass
 
     @abc.abstractmethod
-    def _aggregate(self):
+    def _aggregate(self, client_model_params):
         raise NotImplementedError("")
 
     def _post_aggregate(self):
