@@ -2,6 +2,7 @@ import abc
 import os
 from enum import Enum
 from typing import List
+import torch
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
@@ -38,6 +39,7 @@ class JobAggregateScheduler(JobScheduler):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.client_model_paths = None
         self.target_num = target_num
+        self.avaliable_models = set()
 
     def start(self):
         """
@@ -47,20 +49,14 @@ class JobAggregateScheduler(JobScheduler):
 
         """
         job_id, cur_round = self.job.job_id, self.job.round
-        self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
-
-        avaliable_model_paths = self.get_avaliable_models()
-        # 从本地文件系统中加载当前job对应的模型，此时需要判断收集到的模型数量是否达到目标要求
-        if len(avaliable_model_paths) >= self.target_num:
-
-        # 若在一定时间内当前聚合的模型数量仍然未达到目标要求则先暂停当前job
-
-        # 当收集到的模型达到目标要求时，加载模型
-
-        # 使用聚合算法对当前收集到的模型进行聚合
-
-        # 存储聚合后的模型，并将聚合后的模型发送给其他节点
-        pass
+        if self.client_model_paths is None:
+            self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        path_util = JobPath(job_id)
+        global_model_path = path_util.global_params_dir(cur_round)
+        self.get_avaliable_models()
+        if len(self.avaliable_models) >= self.target_num:
+            # 使用聚合算法对当前收集到的模型进行聚合
+            self.aggregate(list(self.avaliable_models), global_model_path)
 
     def status(self):
         pass
@@ -68,7 +64,7 @@ class JobAggregateScheduler(JobScheduler):
     def stop(self):
         pass
 
-    def aggregate(self, client_model_paths):
+    def aggregate(self, client_model_paths, global_model_path):
         """
         加载从client获得的模型参数，调用aggregator进行模型的聚合
         Parameters
@@ -80,9 +76,17 @@ class JobAggregateScheduler(JobScheduler):
 
         """
         self.status = JobStatus.TRAINING
-        client_models = []
+        client_model_params = []
+        for client_model_path in client_model_paths:
+            try:
+                client_model_param = torch.load(client_model_path)
+                client_model_params.append(client_model_param)
+            except:
+                raise ValueError(f"模型 {client_model_path} 加载失败")
         aggregator_clazz = self.job.job_config.get_aggregator()
         aggregator = aggregator_clazz(job=self.job)
+        aggregator.export_model(global_model_path)
+
 
     def get_avaliable_models(self):
         """
@@ -92,11 +96,9 @@ class JobAggregateScheduler(JobScheduler):
         -------
 
         """
-        avaliable_client_model_paths = []
         for client_model_path in self.client_model_paths:
             if os.path.exists(client_model_path):
-                avaliable_client_model_paths.append(client_model_path)
-        return avaliable_client_model_paths
+                self.avaliable_models.add(client_model_path)
 
     def is_models_avaliable(self, target_num):
         """
@@ -109,16 +111,14 @@ class JobAggregateScheduler(JobScheduler):
         -------
 
         """
-        avaliable_client_model_paths = []
-        avaliable_client_num = 0
-        for client_model_path in self.client_model_paths:
-            if os.path.exists(client_model_path):
-                avaliable_client_model_paths.append(client_model_path)
-                avaliable_client_num += 1
-        if avaliable_client_num >= target_num:
-            return avaliable_client_model_paths
+        job_id, cur_round = self.job.job_id, self.job.round
+        if self.client_model_paths is None:
+            self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        self.get_avaliable_models()
+        if len(self.avaliable_models) < target_num:
+            return False
         else:
-            return None
+            return True
 
     @staticmethod
     def get_client_model_paths(job_id, cur_round) -> List[str]:
@@ -134,6 +134,7 @@ class JobAggregateScheduler(JobScheduler):
         for client_info in client_infos:
             client_model_paths.append(path_util.client_params_dir(cur_round, client_info.address) + f"/{job_id}.pth")
         return client_model_paths
+
 
 class JobTrainScheduler(JobScheduler):
 
