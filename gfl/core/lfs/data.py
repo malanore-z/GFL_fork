@@ -171,9 +171,9 @@ def load_job_zip(job_id: str) -> File:
     if GflConf.get_property("ipfs.enabled"):
         file_obj.seek(0)
         ipfs_hash = Ipfs.put(file_obj.read())
-        return File(ipfs_hash == ipfs_hash)
+        return File(ipfs_hash == ipfs_hash, file=None)
     else:
-        return File(file=file_obj)
+        return File(ipfs_hash=None, file=file_obj)
 
 
 def save_job_zip(job_id: str, job: File) -> NoReturn:

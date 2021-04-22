@@ -64,8 +64,8 @@ class JobPath(Path):
         self.__params_dir = PathUtils.join(self.__root_dir, "results", "params")
         self.__reports_dir = PathUtils.join(self.__root_dir, "results", "reports")
         self.__client_params_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "params")
-        self.__client_word_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "work")
-        self.__global_params_dir = PathUtils.join(self.__root_dir, "round-%d", "params")
+        self.__global_params_dir = PathUtils.join(self.__root_dir, "round-%d", "global", "params")
+        self.__client_work_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "work")
 
     def makedirs(self):
         os.makedirs(self.__root_dir, exist_ok=True)
@@ -122,11 +122,17 @@ class JobPath(Path):
     def reports_dir(self):
         return self.__reports_dir
 
-    def client_params_dir(self, round: int, address: str):
-        return self.__client_params_dir % (round, address)
+    def client_params_dir(self, step: int, address: str):
+        return self.__client_params_dir % (step, address)
 
-    def client_work_dir(self, round: int, address: str):
-        return self.__client_word_dir % (round, address)
+    def client_work_dir(self, step: int, address: str):
+        return self.__client_work_dir % (step, address)
+
+    def server_params_dir(self, step: int):
+        return self.client_params_dir(step, "global")
+
+    def server_work_dir(self, step: int):
+        return self.client_work_dir(step, "global")
 
     def global_params_dir(self, round: int):
         return self.__global_params_dir % round

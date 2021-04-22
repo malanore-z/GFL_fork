@@ -30,5 +30,4 @@ class FedAvgAggregator(Aggregator):
         # self.job.cur_round应该+1???????
         global_model_path = JobPath(self.job_id).global_params_dir(self.job.cur_round+1)
         # 将聚合后的模型参数保存在指定路径上
-        torch.save(self.global_model_param, global_model_path)
         # 判断此时模型是否已经训练完成

@@ -32,26 +32,30 @@ class GflConfMetadata(type):
 
 
 class GflConf(object, metaclass=GflConfMetadata):
-
-    # Parameters that can be modified at run time
+    # 运行时可以修改的参数
     props = {}
-    # Parameters that are read from a configuration file and cannot be changed at run time
+    # 从配置文件中读取的参数，运行时不可更改
     readonly_props = {}
-    # home directory
-    __home_dir = PathUtils.join(PathUtils.user_home_dir(), ".gfl")
-    __data_dir = PathUtils.join(__home_dir, "data")
-    __logs_dir = PathUtils.join(__home_dir, "logs")
-    __cache_dir = PathUtils.join(__home_dir, "cache")
+
+    # PathUtils.user_home_dir() /Users/YY
+    __home_dir = PathUtils.join(PathUtils.user_home_dir(), ".gfl")  # /Users/YY/.gfl
+    __data_dir = PathUtils.join(__home_dir, "data")  # /Users/YY/.gfl/data
+    __logs_dir = PathUtils.join(__home_dir, "logs")  # /Users/YY/.gfl/logs
+    __cache_dir = PathUtils.join(__home_dir, "cache")  # /Users/YY/.gfl/cache
+
+    """
+    读取 /Users/YY/.gfl/conf.yaml 中的配置信息到 readonly_props 中
+    """
 
 
     @classmethod
     def reload(cls):
-        """
-        Reload readonly parameters from the YAML file.
-        :return:
-        """
-        with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "r") as f:
+        with open(PathUtils.join(cls.__home_dir, "conf.yaml"), "r") as f:  # /Users/YY/.gfl/conf.yaml
             cls.readonly_props = yaml.safe_load(f.read())
+
+    """
+    从 readonly_props 中读取 key 对应的信息，如果不存在，则返回 default
+    """
 
     @classmethod
     def load_logging_conf(cls):
@@ -73,6 +77,10 @@ class GflConf(object, metaclass=GflConfMetadata):
                                    cls.__split_key(key),
                                    default)[1]
 
+    """
+    将 props 中键为 key 的值设为 value ，如果 key 出现在 readonly_props，则保存
+    """
+
     @classmethod
     def set_property(cls, key, value):
         """
@@ -82,6 +90,10 @@ class GflConf(object, metaclass=GflConfMetadata):
         if cls.__exists_in_dict(cls.readonly_props, k_seq):
             raise ValueError("readonly key[%d] cannot be modified." % key)
         cls.__set_to_dict(cls.props, cls.__split_key(key), value)
+
+    """
+    将默认配置信息保存到 /Users/YY/.gfl/conf.yaml 中
+    """
 
     @classmethod
     def init_conf(cls):
