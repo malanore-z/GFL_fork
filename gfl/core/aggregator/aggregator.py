@@ -12,16 +12,7 @@ class Aggregator(object):
         self.global_param = None
 
     def aggregate(self, client_model_params):
-        n_models = len(client_model_params)
-        averaged_param = client_model_params[0]
-        weight = 1 / n_models
-        for key in averaged_param.keys():
-            for idx, client_model_param in enumerate(client_model_params):
-                if idx ==0:
-                    averaged_param[key] *= weight
-                if idx != 0:
-                    averaged_param[key] += (client_model_param[key] * weight)
-        self.global_model_param = averaged_param
+        pass
 
     def export_model(self, path):
         torch.save(self.global_model_param, path)
