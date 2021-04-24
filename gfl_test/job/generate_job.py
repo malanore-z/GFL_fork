@@ -30,6 +30,7 @@ def generate_job():
     job = generator.generate()
     JobManager.submit_job(job)
     print(job.job_id)
+    return job
 
 
 if __name__ == "__main__":
