@@ -41,4 +41,3 @@ class Aggregator(object):
 
     def _parse_aggregate_config(self, aggregate_config: AggregateConfig):
         pass
-

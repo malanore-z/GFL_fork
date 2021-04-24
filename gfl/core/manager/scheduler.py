@@ -58,6 +58,9 @@ class JobAggregateScheduler(JobScheduler):
         self.avaliable_models = set()
         self.client_model_params = []
         self.__status = JobStatus.JOB_NOT_START
+        # 若当前的训练轮次为0，则需要聚合方生成一个初始的全局模型分发给各个训练方
+        if self.job.cur_round == 0:
+            self.init_global_model()
 
     def start(self):
         """
@@ -66,17 +69,9 @@ class JobAggregateScheduler(JobScheduler):
         -------
 
         """
-        job_id, cur_round = self.job.job_id, self.job.cur_round
-        # 获取客户端模型的存储路径
-        if self.client_model_paths is None:
-            self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
-        # 获得客户端已经准备好的模型的存储路径，保存到 avaliable_models 中
-        self.get_avaliable_models()
-        # 达到阈值
-        if len(self.avaliable_models) >= self.target_num:
-            self.__status = JobStatus.RESOURCE_ALREADY
-            # 使用聚合算法对当前收集到的模型进行聚合
-            self.aggregate(list(self.avaliable_models))
+        # 使用聚合算法对当前收集到的模型进行聚合
+        self.aggregate(list(self.avaliable_models))
+        self.job.cur_round += 1
 
     def status(self):
         """
@@ -88,7 +83,26 @@ class JobAggregateScheduler(JobScheduler):
         pass
 
     def is_available(self):
-        pass
+        if self.__status == JobStatus.RESOURCE_ALREADY:
+            return True
+        job_id, cur_round = self.job.job_id, self.job.cur_round
+        # 获取客户端模型的存储路径
+        if self.client_model_paths is None:
+            self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
+        # 获得客户端已经准备好的模型的存储路径，保存到 avaliable_models 中
+        self.get_avaliable_models()
+        # 达到阈值
+        if len(self.avaliable_models) >= self.target_num:
+            self.__status = JobStatus.RESOURCE_ALREADY
+            return True
+        else:
+            return False
+
+    def init_global_model(self):
+        job_id = self.job.job_id
+        path_util = JobPath(self.job.job_id)
+        global_model_path = path_util.global_params_dir(0) + f"/{job_id}.pth"
+        torch.save(self.job.train_config.get_model().state_dict(), global_model_path)
 
     def is_running(self):
         pass
@@ -107,7 +121,6 @@ class JobAggregateScheduler(JobScheduler):
         -------
 
         """
-        self.__status = JobStatus.TRAINING
         # 加载从client获得的模型参数
         for client_model_path in client_model_paths:
             try:
@@ -120,6 +133,7 @@ class JobAggregateScheduler(JobScheduler):
         aggregator = aggregator_clazz(job=self.job)
         # aggregator._post_aggregate() 需要将训练好的模型进行保存
         aggregator.aggregate(self.client_model_params)
+        self.__status = JobStatus.EPOCH_FINISHED
 
     def get_avaliable_models(self):
         """
