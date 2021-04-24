@@ -45,13 +45,6 @@ class SupervisedTrainer(Trainer):
         super(SupervisedTrainer, self)._post_train()
         with open("history.json", "w") as f:
             f.write(json.dumps(self.history, indent=4))
-        # 完成指定轮次的训练之后保存当前模型的训练状态
-        # 在 standalone 模式下，将经过训练的模型保存到指定位置
-        client_params_dir = JobPath(self.job_id).client_work_dir(self.round, self.client.address)
-        # 保存 job_id.pth为文件名
-        path = PathUtils.join(client_params_dir, self.job_id + '.pth')
-        # path = client_params_dir + 'job_id.pth'
-        torch.save(self.model.state_dict(), path)
 
     def _validate(self):
         pass

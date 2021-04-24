@@ -174,25 +174,17 @@ class JobTrainScheduler(JobScheduler):
     def __init__(self, *, node: GflNode, job: Job):
         super(JobTrainScheduler, self).__init__(node=node, job=job)
         # 标识当前任务的状态
-        self.__status = JobStatus.JOB_NOT_START
+        self.__status = JobStatus.RESOURCE_NOT_ALREADY
+        # 全局模型参数的路径
+        self.__model_params_path = None
 
     def start(self):
         """
         启动一轮训练
         """
-        # resources_not_already:0
-        self.__status = JobStatus.RESOURCE_NOT_ALREADY
-
-        job_id = self.job.job_id
-        job_round = self.job.cur_round
-
-        # model_params_path: 保存全局模型参数的路径
-        model_params_path = self.get_model_params_path(job_id, job_round)
-        if model_params_path is not None:
-            # 进行模型训练,并将 模型结果参数 保存
-            self.train(model_params_path)
-            # epoch_finished: 3
-            self.__status = JobStatus.EPOCH_FINISHED
+        # 调用start之前，调用is_available，保证全局模型路径下的模型已经存在
+        # 进行模型训练,并将 模型结果参数 保存
+        self.train(model_params_path=self.__model_params_path)
 
     def status(self):
         """
@@ -204,13 +196,28 @@ class JobTrainScheduler(JobScheduler):
         pass
 
     def is_available(self):
-        pass
+        # 判断当前的状态是否为RESOURCE_ALREADY
+        if self.__status == JobStatus.RESOURCE_ALREADY:
+            return True
+        else:
+            self.__model_params_path = self.get_model_params_path(job_id=self.job.job_id, job_round=self.job.cur_round)
+
+        if self.__model_params_path is None:
+            return False
+        else:
+            return True
 
     def is_running(self):
-        pass
+        if self.__status == JobStatus.TRAINING:
+            return True
+        else:
+            return False
 
     def is_finished(self):
-        pass
+        if self.__status == JobStatus.EPOCH_FINISHED:
+            return True
+        else:
+            return False
 
     def register(self):
         NetSend.send_cmd_register(self.job.job_id, self.node.address, self.node.pub_key, self.job.dataset.dataset_id)
@@ -228,12 +235,18 @@ class JobTrainScheduler(JobScheduler):
         """
         # training: 2
         self.__status = JobStatus.TRAINING
+        self.job.job_config.trainer.is_instance = True
+        # trainer_clazz : ConfigObject
         trainer_clazz = self.job.job_config.get_trainer()
         trainer = trainer_clazz(job=self.job, step=self.step, client=self.node)
         # 加载当前的全局模型参数
         trainer.model.load_state_dict(torch.load(model_params_path))
         # trainer._post_train() 需要将训练好的模型进行保存
+        print("开始训练")
         trainer.train()
+        print("训练完成")
+        # epoch_finished: 3
+        self.__status = JobStatus.EPOCH_FINISHED
 
     def get_model_params_path(self, job_id, job_round):
         """

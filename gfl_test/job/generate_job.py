@@ -15,7 +15,8 @@ def generate_dataset():
     generator.dataset_config.with_val_rate(0.2)
     dataset = generator.generate()
     DatasetManager.submit_dataset(dataset)
-    print(dataset.dataset_id)
+    # print(dataset.dataset_id)
+    return dataset
 
 
 def generate_job():
@@ -26,10 +27,12 @@ def generate_job():
     generator.train_config.with_model(fl_model.model)
     generator.train_config.with_optimizer(fl_model.MnistOptimizer, lr=0.2)
     generator.train_config.with_loss(fl_model.CrossEntropyLoss)
+    generator.train_config.with_epoch(2)
     generator.aggregate_config.with_round(3)
     job = generator.generate()
     JobManager.submit_job(job)
-    print(job.job_id)
+    # print(job.job_id)
+    return job
 
 
 if __name__ == "__main__":

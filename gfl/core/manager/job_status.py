@@ -11,4 +11,3 @@ class JobStatus(Enum):
     EPOCH_FINISHED = 3
     ALL_FINISHED = 4
     TRAIN_FAILED = 5
-    JOB_NOT_START = 6
