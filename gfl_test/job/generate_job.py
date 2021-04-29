@@ -28,7 +28,7 @@ def generate_job():
     generator.train_config.with_optimizer(fl_model.MnistOptimizer, lr=0.2)
     generator.train_config.with_loss(fl_model.CrossEntropyLoss)
     generator.train_config.with_epoch(2)
-    generator.aggregate_config.with_round(3)
+    generator.aggregate_config.with_round(2)
     job = generator.generate()
     JobManager.submit_job(job)
     # print(job.job_id)

@@ -25,8 +25,10 @@ class TestMethod(unittest.TestCase):
         self.job = generate_job()
         print("job_id:" + self.job.job_id)
         self.job.mount_dataset(self.dataset)
-
-        self.jobTrainerScheduler = JobTrainScheduler(node=None, job=self.job)
+        GflNode.init_node()
+        node = GflNode.default_node
+        self.jobTrainerScheduler = JobTrainScheduler(node=node, job=self.job)
+        self.jobTrainerScheduler.register()
 
         # aggregator需要初始化随机模型
         global_params_dir = JobPath(self.job.job_id).global_params_dir(self.job.cur_round)

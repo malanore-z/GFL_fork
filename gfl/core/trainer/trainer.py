@@ -34,8 +34,7 @@ class Trainer(object):
 
     def train(self):
         job_path = JobPath(self.job_id)
-        # work_dir = job_path.client_work_dir(self.step, self.client.address)
-        work_dir = job_path.client_work_dir(self.step, "clientAddress")
+        work_dir = job_path.client_work_dir(self.step, self.client.address)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
             self._pre_train()
@@ -43,13 +42,13 @@ class Trainer(object):
             self._post_train()
         # 完成指定轮次的训练之后保存当前模型的训练状态
         # 在 standalone 模式下，将经过训练的模型保存到指定位置
-        # client_params_dir = JobPath(self.job_id).client_work_dir(self.round, self.client.address)
-        client_params_dir = JobPath(self.job_id).client_params_dir(self.round, "clientAddress")
+        client_params_dir = JobPath(self.job_id).client_params_dir(self.round, self.client.address)
         os.makedirs(client_params_dir, exist_ok=True)
         # 保存 job_id.pth为文件名
         path = PathUtils.join(client_params_dir, self.job_id + '.pth')
         # path = client_params_dir + 'job_id.pth'
         torch.save(self.model.state_dict(), path)
+        print("训练完成，已将模型保存至：" + str(client_params_dir))
 
     def validate(self):
         job_path = JobPath(self.job_id)
