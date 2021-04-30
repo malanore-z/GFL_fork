@@ -11,7 +11,7 @@ from gfl.utils import TimeUtils
 
 class Aggregator(object):
 
-    def __init__(self, job: Job, step:int, server: GflNode = GflNode.default_node):
+    def __init__(self, job: Job, step: int, server: GflNode = GflNode.default_node):
         super(Aggregator, self).__init__()
         self.start_time = TimeUtils.millis_time()
         self.job = job
