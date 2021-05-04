@@ -72,7 +72,7 @@ class JobAggregateScheduler(JobScheduler):
         """
         # 使用聚合算法对当前收集到的模型进行聚合
         self.job.cur_round += 1
-        print("开始聚合，轮次："+str(self.job.cur_round))
+        print("开始聚合，轮次：" + str(self.job.cur_round))
         self.aggregate(list(self.avaliable_models))
         self.is_finished()
 
@@ -206,6 +206,7 @@ class JobTrainScheduler(JobScheduler):
         # 进行模型训练,并将 模型结果参数 保存
         print("训练方开始训练，轮次：" + str(self.job.cur_round))
         self.train(model_params_path=self.__model_params_path)
+        self.job.cur_round += 1
         self.is_finished()
 
     def status(self):

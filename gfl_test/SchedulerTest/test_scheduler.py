@@ -113,24 +113,35 @@ class TestMethod(unittest.TestCase):
         self.job = generate_job()
         print("生成的job_id:" + self.job.job_id)
         self.job.mount_dataset(self.dataset)
+
+        self.job_2 = generate_job()
+        self.job_2.job_id = self.job.job_id
+        self.job_2.mount_dataset(self.dataset)
+        print("生成的job_2_id:" + self.job_2.job_id)
+
+        self.job_3 = generate_job()
+        self.job_3.job_id = self.job.job_id
+        self.job_3.mount_dataset(self.dataset)
+        print("生成的job_3_id:" + self.job_3.job_id)
+
         GflNode.init_node()
         node1 = GflNode.default_node
         self.aggregator_scheduler = JobAggregateScheduler(node=None, job=self.job, target_num=2)
 
-        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node1, job=self.job)
-        JobManager.init_job_sqlite(self.job.job_id)
+        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node1, job=self.job_2)
+        JobManager.init_job_sqlite(self.job_2.job_id)
         client1 = ClientEntity(self.jobTrainerScheduler_1.node.address,
                                self.jobTrainerScheduler_1.job.dataset.dataset_id,
                                self.jobTrainerScheduler_1.node.pub_key)
-        save_client(self.job.job_id, client=client1)
+        save_client(self.job_2.job_id, client=client1)
 
         GflNode.init_node()
         node2 = GflNode.default_node
-        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node2, job=self.job)
+        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node2, job=self.job_3)
         client2 = ClientEntity(self.jobTrainerScheduler_2.node.address,
                                self.jobTrainerScheduler_2.job.dataset.dataset_id,
                                self.jobTrainerScheduler_2.node.pub_key)
-        save_client(self.job.job_id, client=client2)
+        save_client(self.job_3.job_id, client=client2)
         # 将调度器放入队列
         self.list = []
         self.list.append(self.jobTrainerScheduler_1)
