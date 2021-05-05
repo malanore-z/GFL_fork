@@ -126,6 +126,7 @@ class JobPath(Path):
         return self.__client_params_dir % (step, address)
 
     def client_work_dir(self, step: int, address: str):
+        # self.__client_work_dir = PathUtils.join(self.__root_dir, "round-%d", "%s", "work")
         return self.__client_work_dir % (step, address)
 
     def server_params_dir(self, step: int):
