@@ -8,6 +8,7 @@ from gfl.core.context import WorkDirContext
 from gfl.core.data import Job
 from gfl.core.data.config import TrainConfig, DatasetConfig
 from gfl.core.lfs.path import JobPath
+from gfl.net.standlone.send import StandaloneSend
 from gfl.utils import TimeUtils, PathUtils
 
 
@@ -41,14 +42,7 @@ class Trainer(object):
             self._train()
             self._post_train()
         # 完成指定轮次的训练之后保存当前模型的训练状态
-        # 在 standalone 模式下，将经过训练的模型保存到指定位置
-        client_params_dir = JobPath(self.job_id).client_params_dir(self.round, self.client.address)
-        os.makedirs(client_params_dir, exist_ok=True)
-        # 保存 job_id.pth为文件名
-        path = PathUtils.join(client_params_dir, self.job_id + '.pth')
-        # path = client_params_dir + 'job_id.pth'
-        torch.save(self.model.state_dict(), path)
-        print("训练完成，已将模型保存至：" + str(client_params_dir))
+        StandaloneSend.send_partial_params(self.client.address, self.job_id, self.round, self.model.state_dict())
 
     def validate(self):
         job_path = JobPath(self.job_id)

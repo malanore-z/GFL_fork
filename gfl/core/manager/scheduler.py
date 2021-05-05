@@ -14,6 +14,7 @@ from gfl.core.manager.job_status import *
 from gfl.core.trainer import SupervisedTrainer
 from gfl.core.lfs.path import JobPath
 from gfl.core.manager.sql_execute import *
+from gfl.net.standlone.receive import StandaloneReceive
 
 
 class JobScheduler(object):
@@ -223,11 +224,14 @@ class JobTrainScheduler(JobScheduler):
         if self.__status == JobStatus.RESOURCE_ALREADY:
             return True
         else:
-            self.__model_params_path = self.get_model_params_path(job_id=self.job.job_id, job_round=self.job.cur_round)
+            self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
+                                                                               cur_round=self.job.cur_round)
 
         if self.__model_params_path is None:
             return False
         else:
+            # resources_already:1
+            self.__status = JobStatus.RESOURCE_ALREADY
             return True
 
     def is_running(self):
@@ -272,31 +276,3 @@ class JobTrainScheduler(JobScheduler):
         trainer.train()
         # epoch_finished: 3
         self.__status = JobStatus.EPOCH_FINISHED
-
-    def get_model_params_path(self, job_id, job_round):
-        """
-        获取 id 为 job_id 并且训练轮次为 job_round 的全局模型参数的路径。
-        若无该路径，说明模型参数还没有准备完成 或 全局模型的聚合已经进行到之后的轮次了。
-        Parameters
-        ----------
-        job_id: job_id
-        job_round: 当前这轮训练的轮次
-
-        Returns model_params_path：保存模型参数的路径
-        -------
-        """
-        # 根据 Job 中的 job_id 和 job_round 获取指定轮次聚合后的 全局模型参数的路径
-        global_params_dir = JobPath(job_id).global_params_dir(job_round)
-        model_params_path = PathUtils.join(global_params_dir, job_id + '.pth')
-        # 判断是否存在模型参数文件，如果存在则返回。
-        if os.path.exists(global_params_dir) and os.path.isfile(model_params_path):
-            # resources_already:1
-            self.__status = JobStatus.RESOURCE_ALREADY
-            print("训练方可以调用全局模型")
-            return model_params_path
-        else:
-            # 等待一段时间。在这段时间内获取到了模型参数文件，则返回
-            # 暂时不考虑这种情况
-            # 否则，认为当前模型参数文件已经无法获取
-            self.__status = JobStatus.TRAIN_FAILED
-            return None
