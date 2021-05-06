@@ -147,8 +147,8 @@ class TestMethod(unittest.TestCase):
 
         # 将调度器放入队列
         self.list = []
-        self.list.append(self.jobTrainerScheduler_1)
         self.list.append(self.aggregator_scheduler)
+        self.list.append(self.jobTrainerScheduler_1)
         self.list.append(self.jobTrainerScheduler_2)
 
     def test_start(self):
