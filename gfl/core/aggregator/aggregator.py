@@ -31,15 +31,7 @@ class Aggregator(object):
             self._pre_aggregate()
             self._aggregate(client_model_params)
             self._post_aggregate()
-        # 完成指定聚合之后保存当前模型
-        # 在 standalone 模式下，将聚合后的模型保存到指定位置
-        global_params_path = JobPath(self.job_id).global_params_dir(self.job.cur_round)
-        os.makedirs(global_params_path, exist_ok=True)
-        path = PathUtils.join(global_params_path, self.job_id + '.pth')
-        # 将聚合后的模型参数保存在指定路径上
-        print("聚合完成，已经模型保存至：" + str(global_params_path))
-        torch.save(self.global_model_param, path)
-        # 判断此时模型是否已经训练完成
+        return self.global_model_param
 
     def _pre_aggregate(self):
         pass

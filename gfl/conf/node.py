@@ -35,6 +35,7 @@ class GflNodeMetadata(type):
             return None
         return cls.default_node.priv_key
 
+
 # 签名：如果数据被更改，则签名会被更改
 class Sign(object):
     def __get__(self, instance, owner):

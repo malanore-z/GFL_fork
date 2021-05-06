@@ -12,6 +12,8 @@ from gfl.net import NetSend, NetFetch, NetReceive, NetBroadcast
 from gfl.core.lfs.path import *
 from gfl.core.manager.job_status import *
 from gfl.core.trainer import SupervisedTrainer
+from gfl.net.standlone.receive import StandaloneReceive
+from gfl.net.standlone.broadcast import StandaloneBroadcast
 from gfl.core.lfs.path import JobPath
 from gfl.core.manager.sql_execute import *
 
@@ -53,12 +55,12 @@ class JobAggregateScheduler(JobScheduler):
 
     def __init__(self, *, node: GflNode, job, target_num):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
-        self.client_model_paths = []
+        self.clients = set()
         self.target_num = target_num
-        self.avaliable_models = set()
-        self.client_model_params = []
+        self.client_model_params = {}
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
+        self.update_clients()
         # 若当前的训练轮次为0，则需要聚合方生成一个初始的全局模型分发给各个训练方
         if self.job.cur_round == 0:
             self.init_global_model()
@@ -73,8 +75,8 @@ class JobAggregateScheduler(JobScheduler):
         # 使用聚合算法对当前收集到的模型进行聚合
         self.job.cur_round += 1
         print("开始聚合，轮次：" + str(self.job.cur_round))
-        self.aggregate(list(self.avaliable_models))
-        self.is_finished()
+        self.aggregate()
+        return self.is_finished()
 
     def status(self):
         """
@@ -88,20 +90,18 @@ class JobAggregateScheduler(JobScheduler):
     def is_available(self):
         if self.__status == JobStatus.RESOURCE_ALREADY:
             return True
+        # 获取模型前先更新客户端
+        self.update_clients()
         job_id, cur_round = self.job.job_id, self.job.cur_round
-        # 获取客户端模型的存储路径
-        self.client_model_paths = self.get_client_model_paths(job_id, cur_round)
-        # 获得客户端已经准备好的模型的存储路径，保存到 avaliable_models 中
-        self.get_avaliable_models()
-        # 达到阈值
-        if len(self.client_model_paths) >= self.target_num:
+        for client_addr in self.clients:
+            if client_addr not in self.client_model_params:
+                client_model_params = StandaloneReceive.receive_partial_params(client_addr, job_id, cur_round)
+                if client_model_params is not None:
+                    self.client_model_params[client_addr] = client_model_params
+        if len(self.client_model_params) >= self.target_num:
             self.__status = JobStatus.RESOURCE_ALREADY
             return True
         else:
-            # 若训练完成的客户端数量未达到阈值，则初始化以下参数，以便下次调用
-            self.client_model_paths = []
-            self.avaliable_models = set()
-            self.client_model_params = []
             return False
 
     def init_global_model(self):
@@ -128,45 +128,31 @@ class JobAggregateScheduler(JobScheduler):
             else:
                 return False
 
-    def aggregate(self, client_model_paths):
+    def aggregate(self):
+        print("聚合方开始模型聚合")
+        job_id = self.job.job_id
+        step = self.job.cur_round
+        # 调用aggregator进行模型的聚合
+        self.job.job_config.aggregator.is_instance = True
+        aggregator_clazz = self.job.job_config.get_aggregator()
+        aggregator = aggregator_clazz(job=self.job, step=step)
+        # aggregator._post_aggregate() 需要将训练好的模型进行保存
+        global_model_params = aggregator.aggregate(self.client_model_params)
+        StandaloneBroadcast.broadcast_global_params(job_id, step, global_model_params)
+        self.client_model_params = {}
+        self.__status = JobStatus.EPOCH_FINISHED
+
+    def update_clients(self):
         """
-        加载从client获得的模型参数，调用aggregator进行模型的聚合
-        Parameters
-        ----------
-        client_model_paths: List[str]
-            保存模型路径的List
+        获取并且更新当前节点的client的地址
         Returns
         -------
 
         """
-        # 加载从client获得的模型参数
-        for client_model_path in client_model_paths:
-            try:
-                client_model_param = torch.load(client_model_path)
-                self.client_model_params.append(client_model_param)
-            except:
-                raise ValueError(f"模型 {client_model_path} 加载失败")
-        # 调用aggregator进行模型的聚合
-        self.job.job_config.aggregator.is_instance = True
-        aggregator_clazz = self.job.job_config.get_aggregator()
-        aggregator = aggregator_clazz(job=self.job, step=self.job.cur_round)
-        # aggregator._post_aggregate() 需要将训练好的模型进行保存
-        aggregator.aggregate(self.client_model_params)
-        self.client_model_paths = []
-        self.avaliable_models = set()
-        self.client_model_params = []
-        self.__status = JobStatus.EPOCH_FINISHED
-
-    def get_avaliable_models(self):
-        """
-        获得从客户端已经接收到的模型
-        Returns List[str]
-            返回的是对包含对应模型文件路径的List
-        -------
-
-        """
-        for client_model_path in self.client_model_paths:
-            self.avaliable_models.add(client_model_path)
+        client = StandaloneReceive.receive_cmd_register(self.job.job_id)
+        while client is not None:
+            self.clients.add(client['address'])
+            client = StandaloneReceive.receive_cmd_register(self.job.job_id)
 
     @staticmethod
     def get_client_model_paths(job_id, cur_round) -> List[str]:
