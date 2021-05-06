@@ -134,6 +134,7 @@ class TestMethod(unittest.TestCase):
                                self.jobTrainerScheduler_1.job.dataset.dataset_id,
                                self.jobTrainerScheduler_1.node.pub_key)
         save_client(self.job_2.job_id, client=client1)
+        self.jobTrainerScheduler_1.register()
 
         GflNode.init_node()
         node2 = GflNode.default_node
@@ -142,6 +143,8 @@ class TestMethod(unittest.TestCase):
                                self.jobTrainerScheduler_2.job.dataset.dataset_id,
                                self.jobTrainerScheduler_2.node.pub_key)
         save_client(self.job_3.job_id, client=client2)
+        self.jobTrainerScheduler_2.register()
+
         # 将调度器放入队列
         self.list = []
         self.list.append(self.jobTrainerScheduler_1)
