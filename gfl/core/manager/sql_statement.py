@@ -52,3 +52,4 @@ select_job_kv_by_key = "SELECT key, value FROM kv WHERE key=?"
 select_job_client_by_address = "SELECT address, dataset, pub_key FROM client WHERE address=?"
 select_job_params_by_step_and_address = "SELECT id, step, is_global, node_address, params, params_check FROM params " \
                                         "WHERE step=? AND node_address=?"
+select_client_by_job_id = "SELECT address, dataset, pub_key FROM client"

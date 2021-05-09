@@ -36,6 +36,7 @@ class GflNodeMetadata(type):
         return cls.default_node.priv_key
 
 
+# 签名：如果数据被更改，则签名会被更改
 class Sign(object):
     def __get__(self, instance, owner):
         if instance is not None:
@@ -79,12 +80,11 @@ class GflNode(object, metaclass=GflNodeMetadata):
 
     def __init__(self, *, address, pub_key, priv_key):
         """
-        In any case, you should not call the constructor directly, but instead get the automatically
-        created GFLNode object by using a class attribute or standalone_nodes
+        在任何情况下都不应该直接调用构造函数，而是通过使用类属性或standalone_nodes获取自动创建的GflNode对象
 
-        :param address: The Node address, unique per Node, is used to identify the Node and verify the data signature
-        :param pub_key: Public key of the Node, used to encrypt data
-        :param priv_key: Private key of the Node, used to decrypt data and sign data
+        :param address: Node地址，每个节点唯一，用于标识节点身份，验证数据签名
+        :param pub_key: 节点公钥，用于加密数据
+        :param priv_key: 节点私钥，用于解密数据，签名数据
         """
         super(GflNode, self).__init__()
         self.__address = address
@@ -106,23 +106,28 @@ class GflNode(object, metaclass=GflNodeMetadata):
     @classmethod
     def init_node(cls) -> NoReturn:
         """
-        initialize GFL node
+        初始化GFL节点
+        :return:
         """
         node = cls.__new_node()
-        key_dir = PathUtils.join(GflConf.home_dir, "key")
+        key_dir = PathUtils.join(GflConf.home_dir, "key")   # /Users/YY/.gfl/key
         os.makedirs(key_dir, exist_ok=True)
-        key_file = PathUtils.join(key_dir, "key.json")
+        key_file = PathUtils.join(key_dir, "key.json")  # /Users/YY/.gfl/key/key.json
         cls.__save_node(node, key_file)
+        # key.json中的内容如下
+        # {
+        #     "address": "a8C03cEBFc6C11C1707032590adf2ACF4ccAc655",
+        #     "pub_key": "d2a95fb211c91f79d052c3c927f51b22893a3b3f7a28090f32d03fc7224bdca0be91173445f71bf1bf91d0fee52ee7c805b7b10dc1b12fa2ed5267b818eb1bc8",
+        #     "priv_key": "708d8f67deb461bdf2a3c9c2d82584b8304cbad32398a5ce5706a8e45f5210bf"
+        # }
         cls.default_node = node
 
     @classmethod
     def add_standalone_node(cls) -> NoReturn:
-        """
-        add standalone GFL node
-        """
+        # 添加【一个】standalone_node
         node = cls.__new_node()
         for i in range(100):
-            # Limit up to 100 mock nodes to prevent an endless loop here
+            # 限制最多100个模拟节点， 防止此处出现死循环
             if i not in cls.standalone_nodes:
                 key_file = PathUtils.join(GflConf.home_dir, "key", "node-%d.json" % i)
                 cls.__save_node(node, key_file)
@@ -133,7 +138,8 @@ class GflNode(object, metaclass=GflNodeMetadata):
     @classmethod
     def load_node(cls) -> NoReturn:
         """
-        Load the key file in the node directory, and create default_node and standalone_nodes objects
+        加载节点目录中的key文件，创建default_node和standalone_nodes对象
+        :return:
         """
         key_dir = PathUtils.join(GflConf.home_dir, "key")
         cls.default_node = cls.__load_node(PathUtils.join(key_dir, "key.json"))
@@ -142,6 +148,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
                 node_idx = int(filename[5:-5])
                 cls.standalone_nodes[node_idx] = cls.__load_node(PathUtils.join(key_dir, filename))
 
+    # 返回签名地址，从签名中返回。签名：如果数据被更改，则签名会被更改
     @classmethod
     def recover(cls, message: AnyStr, signature: str) -> str:
         """
@@ -160,6 +167,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
 
     @classmethod
     def encrypt(cls, plain: AnyStr, pub_key) -> bytes:
+        # 使用 pub_key 公钥，进行加密
         """
         Encrypt with receiver's public key
 

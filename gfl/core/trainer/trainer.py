@@ -1,12 +1,15 @@
 import abc
 import os
 
+import torch
+
 from gfl.conf.node import GflNode
 from gfl.core.context import WorkDirContext
 from gfl.core.data import Job
 from gfl.core.data.config import TrainConfig, DatasetConfig
 from gfl.core.lfs.path import JobPath
-from gfl.utils import TimeUtils
+from gfl.net.standlone.send import StandaloneSend
+from gfl.utils import TimeUtils, PathUtils
 
 
 class Trainer(object):
@@ -14,8 +17,10 @@ class Trainer(object):
     def __init__(self, job: Job, step: int, client: GflNode = GflNode.default_node):
         super(Trainer, self).__init__()
         self.job_start_time = TimeUtils.millis_time()
+        self.job = job
         self.step = step
         self.client = client
+        self.round = job.cur_round
         self.job_id = job.job_id
         self.model = None
         self.optimizer = None
@@ -36,9 +41,15 @@ class Trainer(object):
             self._pre_train()
             self._train()
             self._post_train()
+        # 完成指定轮次的训练之后保存当前模型的训练状态
+        StandaloneSend.send_partial_params(self.client.address, self.job_id, self.round, self.model.state_dict())
 
     def validate(self):
-        pass
+        job_path = JobPath(self.job_id)
+        work_dir = job_path.client_work_dir(self.step, self.client.address)
+        os.makedirs(work_dir, exist_ok=True)
+        with WorkDirContext(work_dir):
+            self._validate()
 
     def _parse_train_config(self, train_config: TrainConfig):
         self.model = train_config.get_model()

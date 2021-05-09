@@ -7,6 +7,7 @@ import gfl.gfl as gfl
 from gfl.conf.node import GflNode
 from gfl.core.data import Job
 from gfl.core.trainer.trainer import Trainer
+from gfl.core.lfs.path import *
 
 
 class SupervisedTrainer(Trainer):
