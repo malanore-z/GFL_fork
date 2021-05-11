@@ -53,10 +53,10 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job, target_num):
+    def __init__(self, *, node: GflNode, job):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.clients = set()
-        self.target_num = target_num
+        self.target_num = self.job.aggregate_config.clients_per_round
         self.client_model_params = {}
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()

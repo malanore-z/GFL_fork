@@ -1,5 +1,5 @@
 import time
-from gfl.core.manager.scheduler import JobAggregateScheduler
+from gfl.core.manager.aggregate_scheduler import JobAggregateScheduler
 from gfl.core.data.job import Job
 from gfl_test.job.generate_job import generate_job
 

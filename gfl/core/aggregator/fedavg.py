@@ -7,7 +7,6 @@ from gfl.core.lfs.path import JobPath
 
 
 class FedAvgAggregator(Aggregator):
-
     def __init__(self, job: Job, step: int, server: GflNode = GflNode.default_node):
         super(FedAvgAggregator, self).__init__(job, step, server)
 

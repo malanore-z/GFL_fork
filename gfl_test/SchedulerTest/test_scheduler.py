@@ -5,7 +5,7 @@ import gfl_test
 from gfl.core.lfs.path import JobPath
 
 from gfl.core.manager.generator import JobGenerator
-from gfl.core.manager.scheduler import JobTrainScheduler, JobAggregateScheduler
+from gfl.core.manager.aggregate_scheduler import JobTrainScheduler, JobAggregateScheduler
 from gfl.conf.node import GflNode
 from gfl.core.data.job import Job
 from gfl.core.manager.job_manager import JobManager
@@ -87,18 +87,18 @@ class TestMethod(unittest.TestCase):
     #     # while(){
     #     #     for(){
     #     #           is_available()
-    #     #           scheduler.status() != JobStatus.ALL_FINISHED
+    #     #           aggregate_scheduler.status() != JobStatus.ALL_FINISHED
     #     #     }
     #     # }
     #     while len(self.list) != 0:
     #         for num in range(len(self.list)):
-    #             scheduler = self.list[num]
-    #             if scheduler.is_finished():
+    #             aggregate_scheduler = self.list[num]
+    #             if aggregate_scheduler.is_finished():
     #                 del self.list[num]
     #             else:
-    #                 if scheduler.is_available():
-    #                     scheduler.start()
-    #                     if scheduler.is_finished():
+    #                 if aggregate_scheduler.is_available():
+    #                     aggregate_scheduler.start()
+    #                     if aggregate_scheduler.is_finished():
     #                         del self.list[num]
 
     def setUp(self) -> None:
@@ -156,7 +156,7 @@ class TestMethod(unittest.TestCase):
         # while(){
         #     for(){
         #           is_available()
-        #           scheduler.status() != JobStatus.ALL_FINISHED
+        #           aggregate_scheduler.status() != JobStatus.ALL_FINISHED
         #     }
         # }
         while len(self.list) != 0:

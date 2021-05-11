@@ -1,5 +1,7 @@
 import abc
 import os
+import pickle
+import sys
 
 import torch
 
@@ -33,8 +35,40 @@ class Aggregator(object):
             self._post_aggregate()
         return self.global_model_param
 
+    def send(self, data, name, client_addr):
+        """send data to target client"""
+        print(f"[Job {self.job.job_id}] Aggregator broadcasting {name} to client {client_addr}")
+        pickled_data = pickle.dumps(data)
+        data_size = sys.getsizeof(pickled_data)
+        path_util = JobPath(self.job.job_id)
+        client_path = path_util.client_params_dir(self.step, client_addr)
+        os.makedirs(client_path, exist_ok=True)
+        data_path = client_path + f"/{name}.pkl"
+        with open(data_path) as f:
+            pickle.dump(pickled_data, f)
+        print(
+            f"[Job {self.job.job_id}] Aggregator send {round(data_size / 1024 ** 2, 2)} MB of {name} data to client {client_addr}")
+
+    def broadcast(self, data, name, clients=None):
+        """broadcast message to all selected clients"""
+        print(f"[Job {self.job.job_id}] Aggregator broadcasting {name} to clients")
+        pickled_data = pickle.dumps(data)
+        data_size = sys.getsizeof(pickled_data)
+        path_util = JobPath(self.job.job_id)
+        global_path = path_util.global_params_dir(self.step)
+        os.makedirs(global_path, exist_ok=True)
+        data_path = global_path + f"/{name}.pkl"
+        with open(data_path) as f:
+            pickle.dump(pickled_data, f)
+
+        print(f"[Job {self.job.job_id}] Aggregator send {round(data_size / 1024**2, 2)} MB of {name} data to all selected clients")
+
     def _pre_aggregate(self):
         pass
+
+    @abc.abstractmethod
+    def extract_weights(self):
+        """提取出模型的权重"""
 
     @abc.abstractmethod
     def _aggregate(self, client_model_params):
