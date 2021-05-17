@@ -5,7 +5,7 @@ import gfl_test
 from gfl.core.lfs.path import JobPath
 
 from gfl.core.manager.generator import JobGenerator
-from gfl.core.manager.scheduler import JobTrainScheduler, JobAggregateScheduler
+from gfl.core.manager.aggregate_scheduler import JobTrainScheduler, JobAggregateScheduler
 from gfl.conf.node import GflNode
 from gfl.core.data.job import Job
 from gfl.core.manager.job_manager import JobManager

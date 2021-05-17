@@ -1,6 +1,7 @@
 import abc
 import logging
 import os
+import pickle
 from typing import List
 
 import torch
@@ -54,17 +55,23 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job, target_num):
+    def __init__(self, *, node: GflNode, job):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
-        self.clients = set()
-        self.target_num = target_num
-        self.client_model_params = {}
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
-        self.update_clients()
-        # 若当前的训练轮次为0，则需要聚合方生成一个初始的全局模型分发给各个训练方
-        if self.job.cur_round == 0:
-            self.init_global_model()
+        self.job_id = self.job.job_id
+        self.aggregator = None
+        self.init_aggregator()
+
+    def init_aggregator(self):
+        self.job.job_config.aggregator.is_instance = True
+        aggregator_clazz = self.job.job_config.get_aggregator()
+        self.aggregator = aggregator_clazz(job=self.job)
+
+    def make_dir(self):
+        cur_round = self.job.cur_round
+        global_params_path = JobPath(self.job_id).global_params_dir(cur_round)
+        os.makedirs(global_params_path, exist_ok=True)
 
     def start(self):
         """
@@ -74,9 +81,10 @@ class JobAggregateScheduler(JobScheduler):
 
         """
         # 使用聚合算法对当前收集到的模型进行聚合
-        self.job.cur_round += 1
+        self.make_dir()
         print("开始聚合，轮次：" + str(self.job.cur_round))
         self.aggregate()
+        self.job.cur_round += 1
         return self.is_finished()
 
     def status(self):
@@ -91,27 +99,11 @@ class JobAggregateScheduler(JobScheduler):
     def is_available(self):
         if self.__status == JobStatus.RESOURCE_ALREADY:
             return True
-        # 获取模型前先更新客户端
-        self.update_clients()
-        job_id, cur_round = self.job.job_id, self.job.cur_round
-        for client_addr in self.clients:
-            if client_addr not in self.client_model_params:
-                client_model_params = StandaloneReceive.receive_partial_params(client_addr, job_id, cur_round)
-                if client_model_params is not None:
-                    self.client_model_params[client_addr] = client_model_params
-        if len(self.client_model_params) >= self.target_num:
+        if self.aggregator.is_available():
             self.__status = JobStatus.RESOURCE_ALREADY
             return True
         else:
             return False
-
-    def init_global_model(self):
-        job_id = self.job.job_id
-        path_util = JobPath(self.job.job_id)
-        global_model_path = path_util.global_params_dir(0)
-        os.makedirs(global_model_path, exist_ok=True)
-        global_model_path += f"/{job_id}.pth"
-        torch.save(self.job.train_config.get_model().state_dict(), global_model_path)
 
     def is_running(self):
         if self.__status == JobStatus.TRAINING:
@@ -130,49 +122,9 @@ class JobAggregateScheduler(JobScheduler):
                 return False
 
     def aggregate(self):
-        print("聚合方开始模型聚合")
-        job_id = self.job.job_id
-        step = self.job.cur_round
-        # 调用aggregator进行模型的聚合
-        self.job.job_config.aggregator.is_instance = True
-        aggregator_clazz = self.job.job_config.get_aggregator()
-        aggregator = aggregator_clazz(job=self.job, step=step)
-        # aggregator._post_aggregate() 需要将训练好的模型进行保存
-        global_model_params = aggregator.aggregate(self.client_model_params)
-        StandaloneBroadcast.broadcast_global_params(job_id, step, global_model_params)
-        self.client_model_params = {}
+        print("Aggregator开始模型聚合")
+        self.aggregator.run()
         self.__status = JobStatus.EPOCH_FINISHED
-
-    def update_clients(self):
-        """
-        获取并且更新当前节点的client的地址
-        Returns
-        -------
-
-        """
-        client = StandaloneReceive.receive_cmd_register(self.job.job_id)
-        while client is not None:
-            self.clients.add(client['address'])
-            client = StandaloneReceive.receive_cmd_register(self.job.job_id)
-
-    @staticmethod
-    def get_client_model_paths(job_id, cur_round) -> List[str]:
-        """
-        获取客户端的模型存储路径
-        Returns
-        -------
-
-        """
-        path_util = JobPath(job_id)
-        client_model_paths = []
-        client_infos = get_client_by_job_id(job_id)
-        print(client_infos)
-        for client_info in client_infos:
-            client_model_path = path_util.client_params_dir(cur_round, client_info.address) + f"/{job_id}.pth"
-            if os.path.exists(client_model_path):
-                client_model_paths.append(client_model_path)
-                print("聚合方获取训练方的模型：" + str(client_model_path))
-        return client_model_paths
 
 
 class JobTrainScheduler(JobScheduler):
