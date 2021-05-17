@@ -1,4 +1,5 @@
 import os
+import pickle
 from typing import Tuple, List
 
 import torch
@@ -75,3 +76,18 @@ class StandaloneReceive(NetReceive):
     @classmethod
     def receive_cmd_register(cls, job_id: str):
         return get_register_record(job_id)
+
+    @classmethod
+    def receive(cls, client_address: str, job_id: str, step: int, name: str):
+        client_dir = JobPath(job_id).client_params_dir(step, client_address)
+        client_data_path = client_dir + f"/{name}.pkl"
+        if os.path.exists(client_data_path):
+            try:
+                with open(client_data_path, 'rb') as pkl_file:
+                    data = pickle.load(pkl_file)
+            except Exception as e:
+                raise ValueError(f"数据 {name} 加载失败"
+                                 f"Error: {e}")
+            return data
+        else:
+            return None

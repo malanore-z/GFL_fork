@@ -1,4 +1,6 @@
 import os
+import pickle
+import sys
 from typing import NoReturn
 
 import torch
@@ -29,3 +31,12 @@ class StandaloneBroadcast(NetBroadcast):
         # 将聚合后的模型参数保存在指定路径上
         torch.save(params, path)
         print("聚合完成，已经模型保存至：" + str(global_params_path))
+
+    @classmethod
+    def broadcast(cls, job_id: str, step: int, data, name):
+        path_util = JobPath(job_id)
+        global_path = path_util.global_params_dir(step)
+        os.makedirs(global_path, exist_ok=True)
+        data_path = global_path + f"/{name}.pkl"
+        with open(data_path, "wb") as f:
+            pickle.dump(data, f)

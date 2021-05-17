@@ -1,5 +1,6 @@
 import abc
 import os
+import pickle
 
 import torch
 
@@ -45,9 +46,11 @@ class Trainer(object):
         client_params_dir = JobPath(self.job_id).client_params_dir(self.round, self.client.address)
         os.makedirs(client_params_dir, exist_ok=True)
         # 保存 job_id.pth为文件名
-        path = PathUtils.join(client_params_dir, self.job_id + '.pth')
+        path = PathUtils.join(client_params_dir, self.job_id + '.pkl')
         # path = client_params_dir + 'job_id.pth'
-        torch.save(self.model.state_dict(), path)
+        # torch.save(self.model.state_dict(), path)
+        with open(path, "wb") as f:
+            pickle.dump(self.model.state_dict(), f)
         print("训练完成，已将模型保存至：" + str(client_params_dir))
 
     def validate(self):
