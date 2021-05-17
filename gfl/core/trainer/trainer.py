@@ -22,7 +22,7 @@ class Trainer(object):
         self.job = job
         self.step = step
         self.client = client
-        self.round = job.cur_round
+        # self.round = job.cur_round
         self.job_id = job.job_id
         self.model = None
         self.optimizer = None
@@ -39,7 +39,7 @@ class Trainer(object):
     def train(self):
         self._pre_train()
         job_path = JobPath(self.job_id)
-        work_dir = job_path.client_work_dir(self.step, self.client.address)
+        work_dir = job_path.client_work_dir(self.job.cur_round, self.client.address)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
             # self._pre_train()
@@ -52,7 +52,7 @@ class Trainer(object):
 
     def validate(self):
         job_path = JobPath(self.job_id)
-        work_dir = job_path.client_work_dir(self.step, self.client.address)
+        work_dir = job_path.client_work_dir(self.job.cur_round, self.client.address)
         os.makedirs(work_dir, exist_ok=True)
         with WorkDirContext(work_dir):
             self._validate()
