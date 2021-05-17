@@ -82,7 +82,7 @@ class StandaloneReceive(NetReceive):
         # 在standalone模式下，trainer获取当前聚合轮次下的全局模型
         # 根据 Job 中的 job_id 和 cur_round 获取指定轮次聚合后的 全局模型参数的路径
         global_params_dir = JobPath(job_id).global_params_dir(cur_round)
-        model_params_path = PathUtils.join(global_params_dir, job_id + '.pth')
+        model_params_path = PathUtils.join(global_params_dir, job_id + '.pkl')
         # 判断是否存在模型参数文件，如果存在则返回。
         if os.path.exists(global_params_dir) and os.path.isfile(model_params_path):
             # resources_already:1

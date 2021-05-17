@@ -21,9 +21,11 @@ class StandaloneSend(NetSend):
         client_params_dir = JobPath(job_id).client_params_dir(step, client)
         os.makedirs(client_params_dir, exist_ok=True)
         # 保存 job_id.pth为文件名
-        path = PathUtils.join(client_params_dir, job_id + '.pth')
+        path = PathUtils.join(client_params_dir, job_id + '.pkl')
         # path = client_params_dir + 'job_id.pth'
-        torch.save(params, path)
+        # torch.save(params, path)
+        with open(path, 'wb') as f:
+            pickle.dump(params, f)
         print("训练完成，已将模型保存至：" + str(client_params_dir))
 
     @classmethod

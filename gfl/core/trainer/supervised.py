@@ -1,4 +1,5 @@
 import json
+import pickle
 
 import torch
 from torch.utils.data import random_split, DataLoader
@@ -8,6 +9,7 @@ from gfl.conf.node import GflNode
 from gfl.core.data import Job
 from gfl.core.trainer.trainer import Trainer
 from gfl.core.lfs.path import *
+from gfl.net.standlone.receive import StandaloneReceive
 
 
 class SupervisedTrainer(Trainer):
