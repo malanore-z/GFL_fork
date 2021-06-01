@@ -55,11 +55,12 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job):
+    def __init__(self, *, node: GflNode, job, topology_manager):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
         self.job_id = self.job.job_id
+        self.topology_manager = topology_manager
         self.aggregator = None
         self.init_aggregator()
 
@@ -67,6 +68,7 @@ class JobAggregateScheduler(JobScheduler):
         self.job.job_config.aggregator.is_instance = True
         aggregator_clazz = self.job.job_config.get_aggregator()
         self.aggregator = aggregator_clazz(job=self.job)
+        self.aggregator.init_topology_manager(self.topology_manager)
 
     def make_dir(self):
         cur_round = self.job.cur_round
@@ -129,18 +131,20 @@ class JobAggregateScheduler(JobScheduler):
 
 class JobTrainScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job: Job):
+    def __init__(self, *, node: GflNode, job: Job, topology_manager):
         super(JobTrainScheduler, self).__init__(node=node, job=job)
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
         self.job_id = self.job.job_id
         self.trainer = None
+        self.topology_manager = topology_manager
         self.init_trainer()
 
     def init_trainer(self):
         self.job.job_config.trainer.is_instance = True
         trainer_clazz = self.job.job_config.get_trainer()
         self.trainer = trainer_clazz(job=self.job, step=self.step, client=self.node)
+        self.trainer.init_topology_manager(self.topology_manager)
 
     def make_dir(self):
         cur_round = self.job.cur_round

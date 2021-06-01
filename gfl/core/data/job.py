@@ -20,6 +20,10 @@ class Job(object):
         self.train_config = train_config
         self.aggregate_config = aggregate_config
         self.dataset = None
+        self.server_list = []
 
     def mount_dataset(self, dataset: Dataset):
         self.dataset = dataset
+
+    def add_server(self, server_node):
+        self.server_list.append(server_node)
