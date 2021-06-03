@@ -2,8 +2,10 @@ import abc
 import os
 import pickle
 import sys
+from collections import OrderedDict
 
 import torch
+from torch.utils.data import DataLoader
 
 from gfl.conf.node import GflNode
 from gfl.core.context import WorkDirContext
@@ -18,31 +20,35 @@ class Aggregator(object):
 
     def __init__(self, job: Job, server: GflNode = GflNode.default_node):
         super(Aggregator, self).__init__()
+        self.dataset = None
         self.global_model = None
+        self.global_model_weights = None
         self.start_time = TimeUtils.millis_time()
         self.job = job
         self.job_id = job.job_id
         self.step = 0
-        self.clients_per_round = self.job.aggregate_config.clients_per_round
-        self.target_round = self.job.aggregate_config.get_round()
         self.available_clients = set()
         self.selected_clients = []
         self.clients = set()
+        self.global_report = dict()
+        self.reports = dict()
         self.should_stop = False
         self._parse_aggregate_config(job.aggregate_config)
         self.init_global_model()
 
     def run(self):
+        self.receive_reports()
         self.choose_clients()
         self.aggregate()
         self.check_should_stop()
         self.step += 1
         self.available_clients = set()
-        NetBroadcast.broadcast(self.job_id, self.step, self.global_model, self.job_id)
+        NetBroadcast.broadcast(self.job_id, self.step, self.global_model_weights, self.job_id)
 
     def init_global_model(self):
         model = self.job.train_config.get_model()
         model_weights = model.state_dict()
+        self.global_model_weights = model_weights
         self.broadcast(model_weights, self.job_id)
 
     def update_clients(self):
@@ -68,6 +74,17 @@ class Aggregator(object):
             client_params_dir = JobPath(self.job_id).client_params_dir(self.step, client_addr) + f"/{self.job_id}.pth"
             if os.path.exists(client_params_dir):
                 self.client_models[client_addr] = client_params_dir
+
+    def receive_reports(self):
+        """
+        获取并且更新当前节点的clients的reports,直接保存到self.reports中
+        Returns
+        -------
+
+        """
+        for client_addr in self.clients:
+            client_report = NetReceive.receive(client_addr, self.job_id, self.step, "report")
+            self.reports[client_addr] = client_report
 
     def is_available(self):
         # 获取模型前先更新客户端
@@ -124,4 +141,27 @@ class Aggregator(object):
         """选取部分模型进行聚合"""
 
     def _parse_aggregate_config(self, aggregate_config: AggregateConfig):
+        self.batch_size = self.job.aggregate_config.get_batch_size()
+        self.clients_per_round = aggregate_config.clients_per_round
+        self.target_round = aggregate_config.get_round()
+        self.loss = aggregate_config.get_loss()
+
+    def compute_weight_updates(self, weights_received):
+        baseline_weights = self.global_model_weights
+        # Calculate updates from the received weights
+        updates = []
+        for weight in weights_received:
+            update = OrderedDict()
+            for name, current_weight in weight.items():
+                baseline = baseline_weights[name]
+                # Calculate update
+                delta = current_weight - baseline
+                update[name] = delta
+            updates.append(update)
+        return updates
+
+    def evaluate(self):
+        pass
+
+    def aggregate_evaluate(self):
         pass
