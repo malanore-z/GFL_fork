@@ -20,7 +20,7 @@ class Aggregator(object):
 
     def __init__(self, job: Job, server: GflNode = GflNode.default_node):
         super(Aggregator, self).__init__()
-        self.dataset = None
+        self.dataset = job.dataset.dataset_config.get_dataset()
         self.global_model = None
         self.global_model_weights = None
         self.start_time = TimeUtils.millis_time()
@@ -40,6 +40,7 @@ class Aggregator(object):
         self.receive_reports()
         self.choose_clients()
         self.aggregate()
+        self.evaluate()
         self.check_should_stop()
         self.step += 1
         self.available_clients = set()

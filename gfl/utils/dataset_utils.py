@@ -1,6 +1,7 @@
 from typing import Union, List
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 
 def partition_iid(dataset, n_clients):
@@ -10,7 +11,6 @@ def partition_iid(dataset, n_clients):
     ----------
     dataset: 需要进行划分的数据
     n_clients: 数据划分的份数
-    replace: 是否进行有放回的采样
 
     Returns
     -------
@@ -56,11 +56,11 @@ def partition_noniid(dataset, n_clients):
 
 
 def partition_noniid_(dataset,
-                     dirichlet_dist: np.ndarray = None,
-                     n_clients: int = 100,
-                     concentration: Union[float, np.ndarray, List[float]] = 0.5,
-                     accept_imbalanced: bool = False,
-                     ):
+                      dirichlet_dist: np.ndarray = None,
+                      n_clients: int = 100,
+                      concentration: Union[float, np.ndarray, List[float]] = 0.5,
+                      accept_imbalanced: bool = False,
+                      ):
     dict_clients = {i: np.array([]) for i in range(n_clients)}
     n_samples = len(dataset)
     dict_clients = {i: np.array([], dtype='int64') for i in range(n_clients)}
@@ -110,7 +110,7 @@ def partition_noniid_(dataset,
     n_class_samples = [0 for i in range(n_classes)]
     for class_idx in range(n_classes):
         if class_idx == n_classes - 1:
-            n_class_samples[class_idx] = n_class_samples - start_indices[class_idx]
+            n_class_samples[class_idx] = n_samples - start_indices[class_idx]
         else:
             n_class_samples[class_idx] = start_indices[class_idx+1] - start_indices[class_idx]
     pre_end_indices = start_indices
@@ -137,3 +137,39 @@ def plot_dist(dirichlet_dist):
             plt.barh(range(n_clients), dirichlet_dist_[class_idx], left=cumsum_dist[class_idx-1])
     plt.title("Distribution of Samples")
     plt.show()
+
+
+def get_split_indices(indices, group_num=2, shuffle=True):
+    if shuffle:
+        np.random.shuffle(indices)
+    split_indices = np.array_split(indices, group_num)
+    return split_indices
+
+
+def vertical_partition_img(dataset, n_clients=2, shuffle=False):
+    idx = 0
+    split_indices = None
+    dic_single_datasets = {}
+    for client_idx in range(n_clients):
+        """
+        Each value is a list of three elements, to accomodate, in order: 
+        - data examples (as tensors)
+        - label
+        - index 
+        """
+        dic_single_datasets[client_idx] = []
+    label_list = []
+    index_list = []
+    for tensor, label in dataset:
+        if split_indices is None:
+            height = tensor.shape[-1]
+            height_indices = np.arange(height)
+            split_indices = get_split_indices(height_indices, group_num=n_clients, shuffle=shuffle)
+        for client_idx in range(n_clients):
+            indices = torch.tensor(split_indices[client_idx])
+            dic_single_datasets[client_idx].append(tensor[:, :, indices])
+        label_list.append(torch.Tensor([label]))
+        index_list.append(torch.Tensor([idx]))
+        idx += 1
+
+    return dic_single_datasets, label_list, index_list

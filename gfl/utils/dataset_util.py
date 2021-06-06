@@ -25,5 +25,6 @@ abs_path = os.path.abspath("dataset")
 mnist_dataset = MnistDataset(abs_path)
 
 if __name__ == '__main__':
-    print(partition_iid(mnist_dataset, 10))
-    partition_noniid_(mnist_dataset, n_clients=20)
+    # print(partition_iid(mnist_dataset, 10))
+    # partition_noniid_(mnist_dataset, n_clients=20)
+    vertical_partition_img(mnist_dataset, n_clients=10, shuffle=True)

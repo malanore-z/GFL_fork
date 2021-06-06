@@ -45,6 +45,7 @@ class FedAvgAggregator(Aggregator):
                 correct += (pred.argmax(1) == y).type(torch.float).sum().item()
         test_loss /= size
         correct /= size
+        print(f"loss: {test_loss}  acc: {correct} ")
         return test_loss, correct
 
     def aggregate_evaluate(self):
@@ -53,7 +54,6 @@ class FedAvgAggregator(Aggregator):
             weight = self.reports[client]["n_samples"] / n_total_samples
             weighted_val_losses = [report["n_samples"] * report["val_loss"] for report in self.reports.values()]
             weighted_accuracy = [report["n_samples"] * report["val_acc"] for report in self.reports.values()]
-
 
     def check_should_stop(self):
         """
