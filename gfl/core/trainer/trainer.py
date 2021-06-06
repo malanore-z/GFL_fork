@@ -32,10 +32,15 @@ class Trainer(object):
         self.batch_size = None
         self.dataset = None
         self.val_dataset = None
+        # 用于获取拓扑结构中的邻居
+        self.topology_manager = None
         self._parse_train_config(job.train_config)
         self._parse_dataset_config(job.dataset.dataset_config)
         self.__model_params_path = None
         self.reports = {}
+
+    def init_topology_manager(self, topology_manager):
+        self.topology_manager = topology_manager
 
     def train(self):
         self._pre_train()
@@ -77,8 +82,19 @@ class Trainer(object):
         # 尝试去获取服务器端的全局模型
         # 获取到则返回True
         # 没有获取到则返回False
-        self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
-                                                                           cur_round=self.job.cur_round)
+
+        # 获取聚合节点的地址，和neighbor_in_node_list中的neighbor比较
+        index_in_topology = self.topology_manager.get_index_by_node_address(self.client.address)
+        neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(index_in_topology)
+        server_list = self.job.server_list
+        for server in server_list:
+            for neighbor in neighbor_in_node_list:
+                if server.address == neighbor.address:
+                    # __model_params_path可能有多个，那需要使用列表才存储
+                    self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
+                                                                                       cur_round=self.job.cur_round)
+        # self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
+        #                                                                    cur_round=self.job.cur_round)
         if self.__model_params_path is None:
             return False
         else:

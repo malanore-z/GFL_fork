@@ -33,6 +33,8 @@ class Aggregator(object):
         self.global_report = dict()
         self.reports = dict()
         self.should_stop = False
+        # 用于获取拓扑结构中的邻居
+        self.topology_manager = None
         self._parse_aggregate_config(job.aggregate_config)
         self.init_global_model()
 
@@ -52,6 +54,9 @@ class Aggregator(object):
         self.global_model_weights = model_weights
         self.broadcast(model_weights, self.job_id)
 
+    def init_topology_manager(self, topology_manager):
+        self.topology_manager = topology_manager
+
     def update_clients(self):
         """
         获取并且更新当前节点的client的地址
@@ -59,9 +64,14 @@ class Aggregator(object):
         -------
 
         """
+        # 这边还需要判断是否在client是否存在于neighbor_in_node_list = self.tpmgr.get_in_neighbor_node_list(0)
+        # 获取聚合方在拓扑结构当中的邻居节点
+        neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(0)
         client = NetReceive.receive_cmd_register(self.job.job_id)
         while client is not None:
-            self.clients.add(client['address'])
+            for neighbor in neighbor_in_node_list:
+                if client['address'] == neighbor.address:
+                    self.clients.add(client['address'])
             client = NetReceive.receive_cmd_register(self.job.job_id)
 
     def update_clients_models(self):
