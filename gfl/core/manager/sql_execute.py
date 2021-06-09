@@ -9,7 +9,8 @@ __all__ = [
     "save_kv",
     "save_client",
     "save_params",
-    "get_client_by_job_id"
+    "get_client_by_job_id",
+    "update_kv"
 ]
 
 from collections import namedtuple
@@ -49,6 +50,10 @@ def create_tables(job_id: str):
 
 def save_kv(job_id: str, kv: KVEntity):
     __save(job_id, insert_job_kv, kv.key, kv.value)
+
+
+def update_kv(job_id: str, kv: KVEntity):
+    __save(job_id, update_job_kv, kv.value, kv.key)
 
 
 def get_kv(job_id: str, key: str):

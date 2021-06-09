@@ -16,6 +16,19 @@ class JobManager(Manager):
         lfs.save_job(job)
         job_file = lfs.load_job_zip(job.job_id)
         NetBroadcast.broadcast_job(job.job_id, job_file)
+        save_kv(job_id=job.job_id, kv=KVEntity("status", "waiting"))
+
+    @classmethod
+    def cancle_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "fail"))
+
+    @classmethod
+    def finish_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "finish"))
+
+    @classmethod
+    def start_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "running"))
 
     @classmethod
     def unfinished_jobs(cls):
@@ -23,7 +36,7 @@ class JobManager(Manager):
         jobs = []
         for job in lfs_jobs:
             status = get_kv(job.job_id, "status")
-            if status != "finish":
+            if status == "waiting":
                 jobs.append(job)
         return jobs
 
