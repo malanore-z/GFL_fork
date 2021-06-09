@@ -31,6 +31,7 @@ def generate_job():
     generator.aggregate_config.with_round(2)
     generator.aggregate_config.with_loss(fl_model.CrossEntropyLoss)
     job = generator.generate()
+    # JobManager.init_job_sqlite(job.job_id)
     JobManager.submit_job(job)
     # print(job.job_id)
     return job

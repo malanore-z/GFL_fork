@@ -2,7 +2,6 @@ import time
 import uuid
 
 from gfl.conf.node import GflNode
-from gfl.core.manager.job_manager import JobManager
 
 
 class Manager(object):
@@ -21,7 +20,7 @@ class Manager(object):
 
     def submit_job(self, job):
         # 提交任务，将任务信息记录到数据库
-        JobManager.submit_job(job)
+        pass
 
     def start_job(self, job_id):
         # 将任务加入到运行队列
@@ -29,7 +28,7 @@ class Manager(object):
 
     def cancle_job(self, job_id):
         # 取消任务，并更改数据库中的状态
-        JobManager.cancle_job(job_id=job_id)
+        pass
 
     def delay_job(self, job_id):
         # 将某个进行/排队中的任务延后
