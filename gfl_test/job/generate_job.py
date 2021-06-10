@@ -30,7 +30,7 @@ def generate_job():
     generator.train_config.with_epoch(2)
     generator.aggregate_config.with_round(2)
     job = generator.generate()
-    submit_job()
+    JobManager.submit_job(job)
     # print(job.job_id)
     return job
 

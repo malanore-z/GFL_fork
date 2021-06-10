@@ -19,7 +19,7 @@ class NodeManager(Manager):
         self.node = GflNode.default_node
 
     def listen_job(self):
-        # server：通过此方法监听client新生成的job，记录到数据库
+        # server_address：通过此方法监听client新生成的job，记录到数据库
         #         拿到job之后，server还需要采用上帝视角的方式生成topology_manager。实例化topology_manager时需要3个参数：job、n、aggregate_node（topology_manager有两种生成方式：1、直接有一个上帝视角，生成topology_manager；2、边广播job边生成）
         #         还需要调用topology_manager的方法，将client_node添加进拓扑
         #         将topology_manager添加到job当中
@@ -33,8 +33,8 @@ class NodeManager(Manager):
             # 这个job中还没有初始化拓扑结构
             if job.topology_manager is None:
                 n = job.aggregate_config.get_clients_per_round()
-                for server in job.server_list:
-                    if self.node.address == server.address:
+                for server_address in job.server_address_list:
+                    if self.node.address == server_address:
                         temp_topology_manager = CentralizedTopologyManager(train_node_num=n, aggregate_node=self.node)
                         # server将client_node添加进拓扑###########
                         # temp_topology_manager.add_node_into_topology()
@@ -69,8 +69,8 @@ class NodeManager(Manager):
             if job is not None:
                 # 实例化scheduler
                 is_server = False
-                for server in job.server_list:
-                    if self.node.address == server.address:
+                for server_address in job.server_address_list:
+                    if self.node.address == server_address:
                         is_server = True
                         break
                 if is_server is True:

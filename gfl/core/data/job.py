@@ -22,7 +22,7 @@ class Job(object):
         self.aggregate_config = aggregate_config
         self.dataset = None
         self.topology_manager = None
-        self.server_list = []
+        self.server_address_list = []
 
     def mount_dataset(self, dataset: Dataset):
         self.dataset = dataset
@@ -31,4 +31,4 @@ class Job(object):
         self.topology_manager = topology_manager
 
     def add_server(self, server_node):
-        self.server_list.append(server_node)
+        self.server_address_list.append(server_node.address)

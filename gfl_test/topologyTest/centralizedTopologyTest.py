@@ -48,6 +48,10 @@ class TestMethod(unittest.TestCase):
         node2 = GflNode.default_node
         GflNode.init_node()
         node3 = GflNode.default_node
+        # 设置job的server
+        self.job.add_server(node1)
+        self.job_2.add_server(node1)
+        self.job_3.add_server(node1)
         # 拓扑结构
         self.tpmgr = CentralizedTopologyManager(train_node_num=2, aggregate_node=node1)
         # 加到拓扑结构当中
