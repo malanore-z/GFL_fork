@@ -3,7 +3,7 @@ import sys
 
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
-from gfl.core.manager.job_manager import JobManager
+from gfl.core.manager.node_manager import JobManager
 
 
 class NodeManager(object):
