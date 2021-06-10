@@ -10,18 +10,16 @@ class CentralizedTopologyManager(BaseTopologyManager):
     中心化的拓扑结构。
 
     Arguments:
-        n (int): number of nodes in the topology.
-        job (Job): 与该拓扑结构关联的Job
+        train_node_num (int): number of client nodes in the topology.
         aggregate_node: the node used to aggregate
     """
 
-    def __init__(self, n, job: Job, aggregate_node=None):
+    def __init__(self, train_node_num, aggregate_node=None):
         # 节点总数，聚合节点只有一个
-        self.n = n
-        self.train_node_num = n - 1
+        self.n = train_node_num + 1
+        self.train_node_num = train_node_num
         self.aggregate_node = aggregate_node
         self.topology = []
-        self.job_id = job.job_id
         # 需要操作这个映射关系的函数,index->node。默认0号节点是聚合节点
         self.map = {}
         self.index_num = 0

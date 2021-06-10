@@ -83,17 +83,17 @@ class Trainer(object):
         # 没有获取到则返回False
 
         # 获取聚合节点的地址，和neighbor_in_node_list中的neighbor比较
-        index_in_topology = self.topology_manager.get_index_by_node_address(self.client.address)
-        neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(index_in_topology)
-        server_list = self.job.server_list
-        for server in server_list:
-            for neighbor in neighbor_in_node_list:
-                if server.address == neighbor.address:
-                    # __model_params_path可能有多个，那需要使用列表才存储
-                    self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
-                                                                                       cur_round=self.job.cur_round)
-        # self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
-        #                                                                    cur_round=self.job.cur_round)
+        # index_in_topology = self.topology_manager.get_index_by_node_address(self.client.address)
+        # neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(index_in_topology)
+        # server_list = self.job.server_list
+        # for server in server_list:
+        #     for neighbor in neighbor_in_node_list:
+        #         if server.address == neighbor.address:
+        #             # __model_params_path可能有多个，那需要使用列表才存储
+        #             self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
+        #                                                                                cur_round=self.job.cur_round)
+        self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
+                                                                           cur_round=self.job.cur_round)
         if self.__model_params_path is None:
             return False
         else:

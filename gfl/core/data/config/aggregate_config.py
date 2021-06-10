@@ -16,3 +16,6 @@ class AggregateConfig(Config):
 
     def get_round(self):
         return self.round
+
+    def get_clients_per_round(self):
+        return self.clients_per_round

@@ -15,6 +15,16 @@ class TestMethod(unittest.TestCase):
 
     def test_start(self):
         # 共有两个训练节点，有一个任务，这个任务需要训练两轮。需要1个aggregator_scheduler，需要2个jobTrainerScheduler
+        # 生成dataset-->生成job-->job.mount_dataset-->
+        # 1、client生成一个job的情况：
+        # client生成一个job之后进行提交、广播
+        # server监听到client广播的job之后，调用job.add_server进行绑定，再进行广播。生成scheduler并运行。
+        # client收到server广播的job之后。生成scheduler，并运行
+
+        # 2、server生成一个job的情况：
+        # server生成一个job之后，调用job.add_server进行绑定，再进行广播。生成scheduler并运行。
+        # client收到server广播的job之后。生成scheduler，并运行
+
         # 生成dataset
         self.dataset = generate_dataset()
         print("生成的dataset_id:" + self.dataset.dataset_id)
@@ -32,41 +42,42 @@ class TestMethod(unittest.TestCase):
         self.job_3.mount_dataset(self.dataset)
         print("生成的job_3_id:" + self.job_3.job_id)
         # 生成3个node。1个是聚合方，2个是训练方
-        # 聚合方
         GflNode.init_node()
         node1 = GflNode.default_node
-        # 将job和聚合方绑定
-        self.job.add_server(node1)
-        self.job_2.add_server(node1)
-        self.job_3.add_server(node1)
-        # 拓扑结构，根据job生成
-        self.tpmgr = CentralizedTopologyManager(n=3, job=self.job, aggregate_node=node1)
-        self.aggregator_scheduler = JobAggregateScheduler(node=node1, topology_manager=self.tpmgr, job=self.job)
-        # 训练方
         GflNode.init_node()
         node2 = GflNode.default_node
-        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node2, topology_manager=self.tpmgr, job=self.job_2)
+        GflNode.init_node()
+        node3 = GflNode.default_node
+        # 拓扑结构
+        self.tpmgr = CentralizedTopologyManager(train_node_num=2, aggregate_node=node1)
+        # 加到拓扑结构当中
+        self.tpmgr.add_node_into_topology(node2, 1)
+        self.tpmgr.add_node_into_topology(node3, 2)
+        # 生成中心化的拓扑结构
+        self.tpmgr.generate_topology()
+        # job与拓扑结构绑定
+        self.job.mount_topology_manager(self.tpmgr)
+        self.job_2.mount_topology_manager(self.tpmgr)
+        self.job_3.mount_topology_manager(self.tpmgr)
+
+        # 根据job生成scheduler
+        # 聚合方
+        self.aggregator_scheduler = JobAggregateScheduler(node=node1, job=self.job)
+        # 训练方
+        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node2, job=self.job_2)
         JobManager.init_job_sqlite(self.job_2.job_id)
         client1 = ClientEntity(self.jobTrainerScheduler_1.node.address,
                                self.jobTrainerScheduler_1.job.dataset.dataset_id,
                                self.jobTrainerScheduler_1.node.pub_key)
         save_client(self.job_2.job_id, client=client1)
         self.jobTrainerScheduler_1.register()
-        # 加到拓扑结构当中
-        self.tpmgr.add_node_into_topology(node2, 1)
         # 训练方
-        GflNode.init_node()
-        node3 = GflNode.default_node
-        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node3, topology_manager=self.tpmgr, job=self.job_3)
+        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node3, job=self.job_3)
         client2 = ClientEntity(self.jobTrainerScheduler_2.node.address,
                                self.jobTrainerScheduler_2.job.dataset.dataset_id,
                                self.jobTrainerScheduler_2.node.pub_key)
         save_client(self.job_3.job_id, client=client2)
         self.jobTrainerScheduler_2.register()
-        # 加到拓扑结构当中
-        self.tpmgr.add_node_into_topology(node3, 2)
-        # 生成中心化的拓扑结构
-        self.tpmgr.generate_topology()
         # 将调度器放入队列
         self.list = []
         self.list.append(self.aggregator_scheduler)
