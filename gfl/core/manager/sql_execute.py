@@ -13,6 +13,7 @@ __all__ = [
     "update_kv"
 ]
 
+import os
 from collections import namedtuple
 
 from gfl.core.context import SqliteContext
@@ -39,6 +40,7 @@ select_job_params_by_step_and_address = "SELECT * FROM params WHERE step=? AND n
 
 def create_tables(job_id: str):
     job_path = JobPath(job_id)
+    job_path.makedirs()
     with SqliteContext(job_path.sqlite_file) as (_, cursor):
         for s in create_job_kv:
             cursor.execute(s)

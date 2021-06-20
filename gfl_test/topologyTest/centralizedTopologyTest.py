@@ -23,6 +23,8 @@ class TestMethod(unittest.TestCase):
         self.job = generate_job()
         print("生成的job_id:" + self.job.job_id)
         self.job.mount_dataset(self.dataset)
+        JobManager.init_job_sqlite(self.job.job_id)
+        JobManager.submit_job(self.job)
         self.job_2 = generate_job()
         self.job_2.job_id = self.job.job_id
         self.job_2.mount_dataset(self.dataset)
@@ -46,7 +48,7 @@ class TestMethod(unittest.TestCase):
         GflNode.init_node()
         node2 = GflNode.default_node
         self.jobTrainerScheduler_1 = JobTrainScheduler(node=node2, topology_manager=self.tpmgr, job=self.job_2)
-        JobManager.init_job_sqlite(self.job_2.job_id)
+        # JobManager.init_job_sqlite(self.job_2.job_id)
         client1 = ClientEntity(self.jobTrainerScheduler_1.node.address,
                                self.jobTrainerScheduler_1.job.dataset.dataset_id,
                                self.jobTrainerScheduler_1.node.pub_key)

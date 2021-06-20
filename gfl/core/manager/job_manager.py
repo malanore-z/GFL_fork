@@ -35,8 +35,8 @@ class JobManager(Manager):
         lfs_jobs = lfs.load_all_job()
         jobs = []
         for job in lfs_jobs:
-            status = get_kv(job.job_id, "status")
-            if status == "waiting":
+            status = get_kv(job.job_id, "status")[0]
+            if status.value == "waiting":
                 jobs.append(job)
         return jobs
 
