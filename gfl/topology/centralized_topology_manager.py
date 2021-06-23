@@ -1,42 +1,41 @@
-import networkx as nx
 import numpy as np
-
+from gfl.core.data.config.topology_config import TopologyConfig
 from gfl.topology.base_topology_manager import BaseTopologyManager
-from gfl.core.data.job import Job
 
 
 class CentralizedTopologyManager(BaseTopologyManager):
     """
     中心化的拓扑结构。
-
-    Arguments:
-        train_node_num (int): number of client nodes in the topology.
-        aggregate_node: the node used to aggregate
     """
 
-    def __init__(self, train_node_num, aggregate_node=None):
-        # 节点总数，聚合节点只有一个
-        self.n = train_node_num + 1
-        self.train_node_num = train_node_num
-        self.aggregate_node = aggregate_node
-        self.topology = []
-        # 需要操作这个映射关系的函数,index->node。默认0号节点是聚合节点
-        self.map = {}
-        self.index_num = 0
-        if self.aggregate_node is not None:
-            self.add_node_into_topology(self.aggregate_node)
+    def __init__(self, topology_config: TopologyConfig):
+        # 节点总数，中心化的场景下聚合节点只有1个
+        self.n = topology_config.get_train_node_num() + 1
+        self.train_node_num = topology_config.get_train_node_num()
+        # 保存该job的server_address
+        self.server_address_list = topology_config.get_client_nodes()
+        self.client_address_list = topology_config.get_client_nodes()
+        self.topology = topology_config.get_topology()
+        # 需要操作这个映射关系的函数,index->node_address。默认0号节点是聚合节点
+        self.map = topology_config.get_index2node()
+        self.index_num = self.n
+
+    def add_server(self, server_node, add_into_topology: bool):
+        self.server_address_list.append(server_node.address)
+        if add_into_topology is True:
+            self.add_node_into_topology(server_node)
 
     def add_node_into_topology(self, node, index=-1):
         # 将index->node的映射存入map
         if index == -1:
-            self.map[self.index_num] = node
+            self.map[self.index_num] = node.address
             self.index_num += 1
         else:
-            self.map[index] = node
+            self.map[index] = node.address
 
     def get_index_by_node_address(self, node_address):
-        for index, node in self.map.items():
-            if node.address == node_address:
+        for index, address in self.map.items():
+            if address == node_address:
                 return index
         return -1
 
@@ -78,16 +77,16 @@ class CentralizedTopologyManager(BaseTopologyManager):
                 neighbor_out_idx_list.append(idx)
         return neighbor_out_idx_list
 
-    def get_out_neighbor_node_list(self, node_index):
-        neighbor_out_node_list = []
+    def get_out_neighbor_node_address_list(self, node_index):
+        neighbor_out_node_address_list = []
         neighbor_out_idx_list = self.get_out_neighbor_idx_list(node_index)
         for i in range(len(neighbor_out_idx_list)):
-            neighbor_out_node_list.append(self.map[neighbor_out_idx_list[i]])
-        return neighbor_out_node_list
+            neighbor_out_node_address_list.append(self.map[neighbor_out_idx_list[i]])
+        return neighbor_out_node_address_list
 
-    def get_in_neighbor_node_list(self, node_index):
-        neighbor_in_node_list = []
+    def get_in_neighbor_node_address_list(self, node_index):
+        neighbor_in_node_address_list = []
         neighbor_in_idx_list = self.get_in_neighbor_idx_list(node_index)
         for i in range(len(neighbor_in_idx_list)):
-            neighbor_in_node_list.append(self.map[neighbor_in_idx_list[i]])
-        return neighbor_in_node_list
+            neighbor_in_node_address_list.append(self.map[neighbor_in_idx_list[i]])
+        return neighbor_in_node_address_list
