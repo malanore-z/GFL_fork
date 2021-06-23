@@ -58,12 +58,12 @@ class Aggregator(object):
 
         """
         # 这边还需要判断是否在client是否存在于neighbor_in_node_list = self.tpmgr.get_in_neighbor_node_list(0)
-        # 获取聚合方在拓扑结构当中的邻居节点
-        neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(0)
+        # 获取聚合方在拓扑结构当中的邻居节点，在中心化的情况下，默认聚合节点的序号是0，
+        neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(0)
         client = NetReceive.receive_cmd_register(self.job.job_id)
         while client is not None:
-            for neighbor in neighbor_in_node_list:
-                if client['address'] == neighbor.address:
+            for neighbor_address in neighbor_in_node_address_list:
+                if client['address'] == neighbor_address:
                     self.clients.add(client['address'])
             client = NetReceive.receive_cmd_register(self.job.job_id)
 

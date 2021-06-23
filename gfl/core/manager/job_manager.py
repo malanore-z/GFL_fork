@@ -1,6 +1,7 @@
 import os
 
 import gfl.core.lfs as lfs
+from gfl.core.data import Job
 from gfl.core.manager.manager import Manager
 from gfl.core.manager.sql_execute import *
 from gfl.net import NetBroadcast
@@ -9,15 +10,6 @@ from gfl.net import NetBroadcast
 class JobManager(Manager):
     def __init__(self):
         pass
-
-    @classmethod
-    def submit_job(cls, job):
-        # 1、节点提交job，将job信息记录到数据库
-        # 2、并将这个job广播出去
-        # server直接调用submit_job方法可以提交任务并广播任务。
-        lfs.save_job(job)
-        job_file = lfs.load_job_zip(job.job_id)
-        NetBroadcast.broadcast_job(job.job_id, job_file)
 
     @classmethod
     def save_job(cls, job):
@@ -36,3 +28,22 @@ class JobManager(Manager):
     @classmethod
     def init_job_sqlite(cls, job_id):
         create_tables(job_id)
+
+    @classmethod
+    def submit_job(cls, job: Job):
+        lfs.save_job(job)
+        job_file = lfs.load_job_zip(job.job_id)
+        NetBroadcast.broadcast_job(job.job_id, job_file)
+        save_kv(job_id=job.job_id, kv=KVEntity("status", "waiting"))
+
+    @classmethod
+    def cancel_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "fail"))
+
+    @classmethod
+    def finish_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "finish"))
+
+    @classmethod
+    def start_job(cls, job_id):
+        update_kv(job_id=job_id, kv=KVEntity("status", "running"))

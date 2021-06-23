@@ -47,6 +47,7 @@ insert_job_kv = "INSERT INTO kv(key, value) VALUES (?, ?)"
 insert_job_client = "INSERT INTO client(address, dataset, pub_key) VALUES (?, ?, ?)"
 insert_job_params = "INSERT INTO params(step, is_global, node_address, params, params_check) VALUES (?, ?, ?, ?, ?)"
 
+update_job_kv = "UPDATE kv SET value=? WHERE key=?"
 
 select_job_kv_by_key = "SELECT key, value FROM kv WHERE key=?"
 select_job_client_by_address = "SELECT address, dataset, pub_key FROM client WHERE address=?"

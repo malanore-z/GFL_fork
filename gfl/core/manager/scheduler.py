@@ -55,12 +55,12 @@ class JobScheduler(object):
 
 class JobAggregateScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job):
+    def __init__(self, *, node: GflNode, job, topology_manager):
         super(JobAggregateScheduler, self).__init__(node=node, job=job)
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
         self.job_id = self.job.job_id
-        self.topology_manager = self.job.topology_manager
+        self.topology_manager = topology_manager
         self.aggregator = None
         self.init_aggregator()
 
@@ -131,13 +131,13 @@ class JobAggregateScheduler(JobScheduler):
 
 class JobTrainScheduler(JobScheduler):
 
-    def __init__(self, *, node: GflNode, job: Job):
+    def __init__(self, *, node: GflNode, job: Job, topology_manager):
         super(JobTrainScheduler, self).__init__(node=node, job=job)
         self.__status = JobStatus.RESOURCE_NOT_ALREADY
         self.__target_round = self.job.aggregate_config.get_round()
         self.job_id = self.job.job_id
         self.trainer = None
-        self.topology_manager = self.job.topology_manager
+        self.topology_manager = topology_manager
         self.init_trainer()
 
     def init_trainer(self):

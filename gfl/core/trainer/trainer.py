@@ -84,11 +84,11 @@ class Trainer(object):
 
         # 获取聚合节点的地址，和neighbor_in_node_list中的neighbor比较
         index_in_topology = self.topology_manager.get_index_by_node_address(self.client.address)
-        neighbor_in_node_list = self.topology_manager.get_in_neighbor_node_list(index_in_topology)
-        server_address_list = self.job.server_address_list
+        neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(index_in_topology)
+        server_address_list = self.topology_manager.server_address_list
         for server_address in server_address_list:
-            for neighbor in neighbor_in_node_list:
-                if server_address == neighbor.address:
+            for neighbor_address in neighbor_in_node_address_list:
+                if server_address == neighbor_address:
                     # __model_params_path可能有多个，那需要使用列表才存储
                     self.__model_params_path = StandaloneReceive.receive_global_params(job_id=self.job.job_id,
                                                                                        cur_round=self.job.cur_round)

@@ -48,27 +48,21 @@ class TestMethod(unittest.TestCase):
         node2 = GflNode.default_node
         GflNode.init_node()
         node3 = GflNode.default_node
-        # 设置job的server
-        self.job.add_server(node1)
-        self.job_2.add_server(node1)
-        self.job_3.add_server(node1)
+        # 在正常情况下，server监听到client发送的job之后，会在serve生成一个TopologyManager，并广播
         # 拓扑结构
-        self.tpmgr = CentralizedTopologyManager(train_node_num=2, aggregate_node=node1)
+        self.tpmgr = CentralizedTopologyManager(train_node_num=2, job_id=self.job.job_id)
+        self.tpmgr.add_server(server_node=node1, add_into_topology=True)
         # 加到拓扑结构当中
-        self.tpmgr.add_node_into_topology(node2, 1)
-        self.tpmgr.add_node_into_topology(node3, 2)
+        self.tpmgr.add_node_into_topology(node2)
+        self.tpmgr.add_node_into_topology(node3)
         # 生成中心化的拓扑结构
         self.tpmgr.generate_topology()
-        # job与拓扑结构绑定
-        self.job.mount_topology_manager(self.tpmgr)
-        self.job_2.mount_topology_manager(self.tpmgr)
-        self.job_3.mount_topology_manager(self.tpmgr)
 
         # 根据job生成scheduler
         # 聚合方
-        self.aggregator_scheduler = JobAggregateScheduler(node=node1, job=self.job)
+        self.aggregator_scheduler = JobAggregateScheduler(node=node1, job=self.job, topology_manager=self.tpmgr)
         # 训练方
-        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node2, job=self.job_2)
+        self.jobTrainerScheduler_1 = JobTrainScheduler(node=node2, job=self.job_2, topology_manager=self.tpmgr)
         JobManager.init_job_sqlite(self.job_2.job_id)
         client1 = ClientEntity(self.jobTrainerScheduler_1.node.address,
                                self.jobTrainerScheduler_1.job.dataset.dataset_id,
@@ -76,7 +70,7 @@ class TestMethod(unittest.TestCase):
         save_client(self.job_2.job_id, client=client1)
         self.jobTrainerScheduler_1.register()
         # 训练方
-        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node3, job=self.job_3)
+        self.jobTrainerScheduler_2 = JobTrainScheduler(node=node3, job=self.job_3, topology_manager=self.tpmgr)
         client2 = ClientEntity(self.jobTrainerScheduler_2.node.address,
                                self.jobTrainerScheduler_2.job.dataset.dataset_id,
                                self.jobTrainerScheduler_2.node.pub_key)
