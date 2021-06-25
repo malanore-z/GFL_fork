@@ -11,14 +11,12 @@ class DeCentralizedTopologyManager(BaseTopologyManager):
 
     Arguments:
         n (int): number of nodes in the topology.
-        job (Job): 与该拓扑结构关联的Job
         neighbor_num (int): number of neighbors for each node
     """
 
-    def __init__(self, n, job: Job, neighbor_num=2):
+    def __init__(self, n, neighbor_num=2):
         self.n = n
         self.neighbor_num = neighbor_num
-        self.job_id = job.job_id
         self.topology = []
         # 需要操作这个映射关系的函数,index->node
         self.map = {}

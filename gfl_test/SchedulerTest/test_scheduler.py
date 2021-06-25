@@ -1,6 +1,6 @@
 from gfl.core.manager.scheduler import JobTrainScheduler, JobAggregateScheduler
 from gfl.conf.node import GflNode
-from gfl.core.manager.job_manager import JobManager
+from gfl.core.manager.node_manager import JobManager
 from gfl_test.job.generate_job import generate_job, generate_dataset
 from gfl.core.manager.sql_execute import ClientEntity, save_client
 

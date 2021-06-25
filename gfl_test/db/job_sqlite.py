@@ -1,6 +1,6 @@
 import gfl_test
 
-from gfl.core.manager.job_manager import JobManager
+from gfl.core.manager.node_manager import JobManager
 from gfl.core.manager.sql_execute import *
 
 

@@ -58,6 +58,7 @@ class JobPath(Path):
         self.__job_config_file = PathUtils.join(self.__root_dir, "job", "job.json")
         self.__train_config_file = PathUtils.join(self.__root_dir, "job", "train.json")
         self.__aggregate_config_file = PathUtils.join(self.__root_dir, "job", "aggregate.json")
+        self.__topology_config_file = PathUtils.join(self.__root_dir, "job", "topology.json")
         self.__module_name = "fl_model"
         self.__module_dir = PathUtils.join(self.__root_dir, "job")
         self.__metrics_dir = PathUtils.join(self.__root_dir, "results", "metrics")
@@ -101,6 +102,10 @@ class JobPath(Path):
     @property
     def aggregate_config_file(self):
         return self.__aggregate_config_file
+
+    @property
+    def topology_config_file(self):
+        return self.__topology_config_file
 
     @property
     def module_name(self):
