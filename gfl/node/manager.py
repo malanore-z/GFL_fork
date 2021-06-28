@@ -1,13 +1,8 @@
 import time
-import sys
-import gfl_test.dataset as fl_dataset
-import gfl_test.model as fl_model
-import gfl.core.lfs as lfs
-from gfl.conf import GflConf
 import gfl.core.lfs as lfs
 from gfl.conf.node import GflNode
 from gfl.core.lfs import load_topology_manager
-# from gfl.core.manager.node_manager import JobManager
+from gfl.core.manager.job_manager import JobManager
 from gfl.core.manager.scheduler import JobAggregateScheduler, JobTrainScheduler
 from gfl.core.manager.sql_execute import ClientEntity, save_client
 
@@ -18,15 +13,6 @@ from gfl.core.manager.sql_execute import ClientEntity, save_client
 #   1.2 调用init_job_sqlite、submit_job完成初始化操作，并且进行广播，并在数据库中甚至为waiting状态，等待接下来运行
 #   1.3 运行job（何时创建scheduler？）
 # 2、其余节点监听到此job之后，进行初始化操作。在运行这个job获取job和topology_manager。根据这个job与本节点是否有关，保存在本地。并创建对应的scheduler
-from gfl.core.lfs import load_topology_manager
-from gfl.core.manager.job_manager import JobManager
-from gfl.core.manager.generator import DatasetGenerator, JobGenerator
-from gfl.core.manager.scheduler import JobAggregateScheduler, JobTrainScheduler
-from gfl.topology.centralized_topology_manager import CentralizedTopologyManager
-from gfl_test.job.generate_job import generate_job, generate_dataset
-from gfl.core.manager.sql_execute import ClientEntity, save_client
-
-
 class NodeManager(object):
 
     def __init__(self, *, node: GflNode = None, role: str = "client"):
@@ -80,10 +66,6 @@ class NodeManager(object):
             else:
                 raise ValueError(f"Unsupported role parameter {self.role}")
 
-
-
-
-
     def listen_job(self):
         # 监听其他节点新生成的job
         # 在单机模式下，所有节点共用一个数据库，所以直接调用此方法获取未完成的job
@@ -111,6 +93,7 @@ class NodeManager(object):
     def stop(self):
         # 暂停manager的运行
         pass
+
     def start_job(self, job_id):
         # 将任务加入到运行队列
         pass

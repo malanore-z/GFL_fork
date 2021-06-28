@@ -19,7 +19,7 @@ class JobManager(Manager):
         save_kv(job_id=job.job_id, kv=KVEntity("status", "waiting"))
 
     @classmethod
-    def cancle_job(cls, job_id):
+    def cancel_job(cls, job_id):
         update_kv(job_id=job_id, kv=KVEntity("status", "fail"))
 
     @classmethod
