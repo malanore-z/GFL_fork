@@ -1,7 +1,7 @@
 import gfl_test
 from gfl.conf.node import GflNode
 from gfl.core.lfs.data import save_topology_manager
-
+from gfl.core.data.config.topology_config import TopologyConfig
 from gfl.core.manager import JobManager, DatasetManager
 from gfl.core.manager.generator import DatasetGenerator, JobGenerator
 from gfl.core.strategy import *
@@ -42,25 +42,35 @@ def generate_job():
 
 def generate_topology(job_id):
     # 生成3个node。1个是聚合方，2个是训练方
-    GflNode.init_node()
-    node1 = GflNode.default_node
-    GflNode.init_node()
-    node2 = GflNode.default_node
-    GflNode.init_node()
-    node3 = GflNode.default_node
+    node1 = GflNode.standalone_nodes[0]
+    node2 = GflNode.standalone_nodes[1]
+    node3 = GflNode.standalone_nodes[2]
     # 拓扑结构
-    tpmgr = CentralizedTopologyManager(train_node_num=2, job_id=job_id)
-    tpmgr.add_server(server_node=node1, add_into_topology=True)
+    topology_config = TopologyConfig()
+    topology_config.with_train_node_num(2)
+    topology_config.with_server_nodes([node1.address])
+    topology_config.with_client_nodes([node2.address, node3.address])
+    topology_config.with_index2node([node1.address, node2.address, node3.address])
+    tpmgr = CentralizedTopologyManager(topology_config)
+    # tpmgr.add_server(server_node=node1, add_into_topology=True)
     # 加到拓扑结构当中
-    tpmgr.add_node_into_topology(node2)
-    tpmgr.add_node_into_topology(node3)
+    # tpmgr.add_node_into_topology(node2)
+    # tpmgr.add_node_into_topology(node3)
     # 生成中心化的拓扑结构
     tpmgr.generate_topology()
     save_topology_manager(job_id=job_id, topology_manager=tpmgr)
     return tpmgr
 
 
+def generate_nodes():
+    GflNode.init_node()
+    GflNode.add_standalone_node()
+    GflNode.add_standalone_node()
+    GflNode.add_standalone_node()
+
+
 if __name__ == "__main__":
-    generate_dataset()
+    # generate_dataset()
+    generate_nodes()
     job = generate_job()
     generate_topology(job.job_id)

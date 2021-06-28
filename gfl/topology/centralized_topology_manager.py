@@ -13,7 +13,7 @@ class CentralizedTopologyManager(BaseTopologyManager):
         self.n = topology_config.get_train_node_num() + 1
         self.train_node_num = topology_config.get_train_node_num()
         # 保存该job的server_address
-        self.server_address_list = topology_config.get_client_nodes()
+        self.server_address_list = topology_config.get_server_nodes()
         self.client_address_list = topology_config.get_client_nodes()
         self.topology = topology_config.get_topology()
         # 需要操作这个映射关系的函数,index->node_address。默认0号节点是聚合节点
@@ -34,19 +34,19 @@ class CentralizedTopologyManager(BaseTopologyManager):
             self.map[index] = node.address
 
     def get_index_by_node_address(self, node_address):
-        for index, address in self.map.items():
+        for index, address in enumerate(self.map):
             if address == node_address:
                 return index
         return -1
 
     def generate_topology(self):
-        topology_graph = np.zeros([self.n, self.n], dtype=np.float32)
+        topology_graph = np.zeros([self.n, self.n], dtype=np.int32)
         np.fill_diagonal(topology_graph, 1)
         for i in range(self.n):
             topology_graph[0][i] = 1
         for i in range(self.n):
             topology_graph[i][0] = 1
-        self.topology = topology_graph
+        self.topology = topology_graph.tolist()
 
     def get_in_neighbor_weights(self, node_index):
         if node_index >= self.n:

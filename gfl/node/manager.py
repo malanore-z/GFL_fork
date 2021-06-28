@@ -5,6 +5,7 @@ import gfl_test.model as fl_model
 import gfl.core.lfs as lfs
 from gfl.conf import GflConf
 from gfl.conf.node import GflNode
+from gfl.core.lfs import load_topology_manager
 from gfl.core.manager.job_manager import JobManager
 from gfl.core.manager.generator import DatasetGenerator, JobGenerator
 from gfl.core.manager.scheduler import JobAggregateScheduler, JobTrainScheduler
@@ -22,8 +23,6 @@ class NodeManager(object):
         self.waiting_list = None
         self.tpmgr = None
         self.scheduler_list = []
-        # TODO: 为了测试使用，之后需要删除
-        self.server_node = None
 
     def run(self):
         # 一直运行，不断地从队列中获取可以运行的任务并执行任务
@@ -32,36 +31,38 @@ class NodeManager(object):
         # 3. 对需要训练的job， 构造JobScheduler实例，并将其注册到任务调度器中，此JobScheduler的控制 权移交任务调度器。
         # 4. 开始监听网络中新的job。
         self.listen_job()
+        print(f"{self.node.address} waiting_list:{self.waiting_list}")
         while self.waiting_list:
             selected_job = self.waiting_list.pop()
-            selected_job.add_server(self.server_node)
             print(f"{self.role} {self.node.address} 开始执行job{selected_job.job_id}")
             # 目前先手动设置dataset
             dataset = lfs.load_dataset("76ffe215beaf3180ab970219f18915c2")
             selected_job.mount_dataset(dataset)
-            # 目前先手动设置拓扑结构
+            tpmgr = load_topology_manager(selected_job.job_id)
             if self.role == "server":
-                scheduler = JobAggregateScheduler(node=self.node, topology_manager=self.tpmgr, job=selected_job)
+                scheduler = JobAggregateScheduler(node=self.node, topology_manager=tpmgr, job=selected_job)
                 while not scheduler.is_finished():
                     if scheduler.is_available():
+                        print(f"server {self.node.address} 开始执行")
                         scheduler.start()
                     else:
+                        print(f"server {self.node.address} 等待")
                         time.sleep(10)
                 JobManager.finish_job(selected_job.job_id)
             elif self.role == "client":
-                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=self.tpmgr)
+                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=tpmgr)
                 client = ClientEntity(scheduler.node.address,
                                       scheduler.job.dataset.dataset_id,
                                       scheduler.node.pub_key)
                 save_client(selected_job.job_id, client=client)
                 scheduler.register()
-                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=self.tpmgr)
+                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=tpmgr)
                 while not scheduler.is_finished():
                     if scheduler.is_available():
-                        print("开始执行")
+                        print(f"client {self.node.address} 开始执行")
                         scheduler.start()
                     else:
-                        print("等待")
+                        print(f"client {self.node.address} 等待")
                         time.sleep(10)
             else:
                 raise ValueError(f"Unsupported role parameter {self.role}")
