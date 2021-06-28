@@ -222,7 +222,7 @@ def save_topology_manager(job_id, topology_manager):
     topology_config = TopologyConfig()
     topology_config.with_topology(topology_manager.topology)
     topology_config.with_client_nodes(topology_manager.client_address_list)
-    topology_config.with_index2node(topology_manager.server_address_list)
+    topology_config.with_index2node(topology_manager.index2node)
     topology_config.with_train_node_num(topology_manager.train_node_num)
     topology_config.with_server_nodes(topology_manager.server_address_list)
     # 目前暂时考虑中心化的场景

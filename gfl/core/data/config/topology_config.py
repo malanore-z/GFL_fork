@@ -1,14 +1,14 @@
-from typing import List
+from typing import List, Dict
 
 from gfl.core.data.config.config import Config
 
 
 class TopologyConfig(Config):
     train_node_num: int
-    server_nodes: List[int]
-    client_nodes: List[int]
+    server_nodes: List[str]
+    client_nodes: List[str]
     topology: List[List[int]]
-    index2node: List[int]
+    index2node: List[str]
     isCentralized: bool
 
     def with_train_node_num(self, train_node_num):

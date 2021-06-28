@@ -13,40 +13,48 @@ class CentralizedTopologyManager(BaseTopologyManager):
         self.n = topology_config.get_train_node_num() + 1
         self.train_node_num = topology_config.get_train_node_num()
         # 保存该job的server_address
-        self.server_address_list = topology_config.get_client_nodes()
+        self.server_address_list = topology_config.get_server_nodes()
         self.client_address_list = topology_config.get_client_nodes()
         self.topology = topology_config.get_topology()
-        # 需要操作这个映射关系的函数,index->node_address。默认0号节点是聚合节点
-        self.map = topology_config.get_index2node()
-        self.index_num = self.n
+        # 用来保存index->node_address的映射关系
+        # 默认index为0的节点为聚合节点即server
+        # 默认训练节点即client的index从1,2...按顺序递增
+        self.index2node = topology_config.get_index2node()
 
     def add_server(self, server_node, add_into_topology: bool):
+        # 此方法仅在拓扑结构不存在server和client的情况下调用
         self.server_address_list.append(server_node.address)
+        self.n += 1
         if add_into_topology is True:
-            self.add_node_into_topology(server_node)
+            self._add_node_into_topology(server_node)
 
-    def add_node_into_topology(self, node, index=-1):
+    def add_client(self, client_node, add_into_topology: bool):
+        self.client_address_list.append(client_node.address)
+        self.n += 1
+        self.train_node_num += 1
+        if add_into_topology is True:
+            self._add_node_into_topology(client_node)
+
+    def _add_node_into_topology(self, node):
         # 将index->node的映射存入map
-        if index == -1:
-            self.map[self.index_num] = node.address
-            self.index_num += 1
-        else:
-            self.map[index] = node.address
+        self.index2node.append(node.address)
 
-    def get_index_by_node_address(self, node_address):
-        for index, address in self.map.items():
-            if address == node_address:
+    def get_index_by_node(self, node):
+        for index in range(len(self.index2node)):
+            if self.index2node[index] == node.address:
                 return index
         return -1
 
     def generate_topology(self):
-        topology_graph = np.zeros([self.n, self.n], dtype=np.float32)
+        # 目前仅支持在确定节点之后，调用此方法生成拓扑结构
+        # 不支持在生成拓扑结构之后，再往拓扑结构中添加新的节点
+        topology_graph = np.zeros([self.n, self.n], dtype=np.int8)
         np.fill_diagonal(topology_graph, 1)
         for i in range(self.n):
             topology_graph[0][i] = 1
         for i in range(self.n):
             topology_graph[i][0] = 1
-        self.topology = topology_graph
+        self.topology = topology_graph.tolist()
 
     def get_in_neighbor_weights(self, node_index):
         if node_index >= self.n:
@@ -81,12 +89,12 @@ class CentralizedTopologyManager(BaseTopologyManager):
         neighbor_out_node_address_list = []
         neighbor_out_idx_list = self.get_out_neighbor_idx_list(node_index)
         for i in range(len(neighbor_out_idx_list)):
-            neighbor_out_node_address_list.append(self.map[neighbor_out_idx_list[i]])
+            neighbor_out_node_address_list.append(self.index2node[neighbor_out_idx_list[i]])
         return neighbor_out_node_address_list
 
     def get_in_neighbor_node_address_list(self, node_index):
         neighbor_in_node_address_list = []
         neighbor_in_idx_list = self.get_in_neighbor_idx_list(node_index)
         for i in range(len(neighbor_in_idx_list)):
-            neighbor_in_node_address_list.append(self.map[neighbor_in_idx_list[i]])
+            neighbor_in_node_address_list.append(self.index2node[neighbor_in_idx_list[i]])
         return neighbor_in_node_address_list
