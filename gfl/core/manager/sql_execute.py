@@ -13,6 +13,7 @@ __all__ = [
     "update_kv"
 ]
 
+import os
 from collections import namedtuple
 
 from gfl.core.context import SqliteContext

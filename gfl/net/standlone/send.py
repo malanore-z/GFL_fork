@@ -40,7 +40,7 @@ class StandaloneSend(NetSend):
             with open(client_data_path, 'wb') as pkl_file:
                 pickled_data = pickle.dumps(data)
                 data_size = sys.getsizeof(pickled_data)
-                pickle.dump(pickled_data, pkl_file)
+                pkl_file.write(pickled_data)
         except Exception as e:
             raise ValueError(f"数据 {data} 发送失败"
                              f"Error: {e}")

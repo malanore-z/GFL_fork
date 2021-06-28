@@ -37,6 +37,7 @@ class Trainer(object):
         self._parse_train_config(job.train_config)
         self._parse_dataset_config(job.dataset.dataset_config)
         self.__model_params_path = None
+        self.reports = {}
 
     def init_topology_manager(self, topology_manager):
         self.topology_manager = topology_manager
@@ -51,8 +52,8 @@ class Trainer(object):
             self._train()
             self._post_train()
         # 完成指定轮次的训练之后保存当前模型的训练状态
-        StandaloneSend.send_partial_params(self.client.address, self.job_id, self.job.cur_round,
-                                           self.model.state_dict())
+        StandaloneSend.send_partial_params(self.client.address, self.job_id, self.job.cur_round, self.model.state_dict())
+        StandaloneSend.send(self.client.address, self.job_id, self.job.cur_round, "report", self.reports)
         # 初始化self.__model_params_path，准备下一轮训练
         self.__model_params_path = None
 

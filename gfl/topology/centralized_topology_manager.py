@@ -48,7 +48,7 @@ class CentralizedTopologyManager(BaseTopologyManager):
     def generate_topology(self):
         # 目前仅支持在确定节点之后，调用此方法生成拓扑结构
         # 不支持在生成拓扑结构之后，再往拓扑结构中添加新的节点
-        topology_graph = np.zeros([self.n, self.n], dtype=np.int8)
+        topology_graph = np.zeros([self.n, self.n], dtype=np.int32)
         np.fill_diagonal(topology_graph, 1)
         for i in range(self.n):
             topology_graph[0][i] = 1
