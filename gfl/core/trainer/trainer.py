@@ -84,7 +84,7 @@ class Trainer(object):
         # 没有获取到则返回False
 
         # 获取聚合节点的地址，和neighbor_in_node_list中的neighbor比较
-        index_in_topology = self.topology_manager.get_index_by_node_address(self.client.address)
+        index_in_topology = self.topology_manager.get_index_by_node(self.client)
         neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(index_in_topology)
         server_address_list = self.topology_manager.server_address_list
         for server_address in server_address_list:

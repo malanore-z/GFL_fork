@@ -11,7 +11,6 @@ from eth_keys import keys
 from gfl.conf import GflConf
 from gfl.utils import PathUtils
 
-
 w3 = Web3()
 
 
@@ -54,6 +53,7 @@ class Sign(object):
         signed_message = w3.eth.account.sign_message(encoded_message, self.key)
         return signed_message.signature.hex()
 
+
 class Decrypt(object):
 
     def __get__(self, instance, owner):
@@ -71,7 +71,6 @@ class Decrypt(object):
 
 
 class GflNode(object, metaclass=GflNodeMetadata):
-
     default_node = None
     standalone_nodes = {}
 
@@ -110,7 +109,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
         :return:
         """
         node = cls.__new_node()
-        key_dir = PathUtils.join(GflConf.home_dir, "key")   # /Users/YY/.gfl/key
+        key_dir = PathUtils.join(GflConf.home_dir, "key")  # /Users/YY/.gfl/key
         os.makedirs(key_dir, exist_ok=True)
         key_file = PathUtils.join(key_dir, "key.json")  # /Users/YY/.gfl/key/key.json
         cls.__save_node(node, key_file)

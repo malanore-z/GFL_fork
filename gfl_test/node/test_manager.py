@@ -13,6 +13,7 @@ from gfl_test.job.generate_job import generate_job
 
 class TestMethod(unittest.TestCase):
     def setUp(self) -> None:
+        # GflNode.init_node()
         GflNode.load_node()
         node_server = GflNode.standalone_nodes[0]
         node_client1 = GflNode.standalone_nodes[1]
@@ -20,26 +21,18 @@ class TestMethod(unittest.TestCase):
         self.node_manager_server = NodeManager(node=node_server, role="server")
         self.node_manager_client1 = NodeManager(node=node_client1, role="client")
         self.node_manager_client2 = NodeManager(node=node_client2, role="client")
+        # 创建job
         self.job = generate_job()
+        # 创建job对应的拓扑
         topology_config = TopologyConfig()
         topology_config.with_train_node_num(2)
         topology_config.with_server_nodes([node_server.address])
         topology_config.with_client_nodes([node_client1.address, node_client2.address])
         topology_config.with_index2node([node_server.address, node_client1.address, node_client2.address])
-        tpmgr = CentralizedTopologyManager(topology_config)
-        tpmgr.generate_topology()
-        save_topology_manager(job_id=self.job.job_id, topology_manager=tpmgr)
-        # self.node_manager_client1.server_node = node_server
-        # self.node_manager_client2.server_node = node_server
-        # tpmgr = CentralizedTopologyManager(train_node_num=2, job_id=self.job.job_id)
-        # tpmgr.add_server(server_node=node_server, add_into_topology=True)
-        # tpmgr.add_node_into_topology(node_client1)
-        # tpmgr.add_node_into_topology(node_client2)
-        # tpmgr.generate_topology()
-        # save_topology_manager(job_id=self.job.job_id, topology_manager=tpmgr)
-        # self.node_manager_server.tpmgr = self.tpmgr
-        # self.node_manager_client1.tpmgr = self.tpmgr
-        # self.node_manager_client2.tpmgr = self.tpmgr
+        temp_topology_manager = CentralizedTopologyManager(topology_config)
+        temp_topology_manager.generate_topology()
+        # 保存job对应的拓扑
+        save_topology_manager(job_id=self.job.job_id, topology_manager=temp_topology_manager)
 
     def test_process(self):
         # threads = []
@@ -57,7 +50,8 @@ class TestMethod(unittest.TestCase):
         #     time.sleep(1)
         # for t in threads:
         #     t.join()
-        with ThreadPoolExecutor(max_workers=5) as t:
+
+        with ThreadPoolExecutor(max_workers=3) as t:
             task1 = t.submit(self.node_manager_server.run)
             task2 = t.submit(self.node_manager_client1.run)  # 通过submit提交执行的函数到线程池中
             task3 = t.submit(self.node_manager_client2.run)

@@ -4,4 +4,4 @@ __all__ = [
 ]
 
 from gfl.core.manager.dataset_manager import DatasetManager
-from gfl.core.manager.node_manager import JobManager
+from gfl.core.manager.job_manager import JobManager

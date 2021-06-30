@@ -20,51 +20,65 @@ class NodeManager(object):
         self.node = GflNode.default_node if node is None else node
         self.role = role
         self.waiting_list = None
-        self.tpmgr = None
         self.scheduler_list = []
 
     def run(self):
-        # 一直运行，不断地从队列中获取可以运行的任务并执行任务
-        # 1. 使用 JobManager 加载未完成的job
-        # 2. 根据配置参数决定是否继续训练未完成的job
-        # 3. 对需要训练的job， 构造JobScheduler实例，并将其注册到任务调度器中，此JobScheduler的控制 权移交任务调度器。
-        # 4. 开始监听网络中新的job。
-        self.listen_job()
-        print(f"{self.node.address} waiting_list:{self.waiting_list}")
-        while self.waiting_list:
-            selected_job = self.waiting_list.pop()
-            print(f"{self.role} {self.node.address} 开始执行job{selected_job.job_id}")
-            # 目前先手动设置dataset
-            dataset = lfs.load_dataset("76ffe215beaf3180ab970219f18915c2")
-            selected_job.mount_dataset(dataset)
-            tpmgr = load_topology_manager(selected_job.job_id)
-            if self.role == "server":
-                scheduler = JobAggregateScheduler(node=self.node, topology_manager=tpmgr, job=selected_job)
-                while not scheduler.is_finished():
-                    if scheduler.is_available():
-                        print(f"server {self.node.address} 开始执行")
-                        scheduler.start()
-                    else:
-                        print(f"server {self.node.address} 等待")
-                        time.sleep(10)
-                JobManager.finish_job(selected_job.job_id)
-            elif self.role == "client":
-                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=tpmgr)
-                client = ClientEntity(scheduler.node.address,
-                                      scheduler.job.dataset.dataset_id,
-                                      scheduler.node.pub_key)
-                save_client(selected_job.job_id, client=client)
-                scheduler.register()
-                scheduler = JobTrainScheduler(node=self.node, job=selected_job, topology_manager=tpmgr)
-                while not scheduler.is_finished():
+        while True:
+            # 监听job，并将监听到的job保存到waiting_list中
+            self.listen_job()
+            # 为waiting_list中的job构造Scheduler实例，保存到scheduler_list
+            while self.waiting_list:
+                selected_job = self.waiting_list.pop()
+                print(f"{self.role} {self.node.address} 准备开始执行job{selected_job.job_id}")
+                JobManager.start_job(selected_job.job_id)
+                # 目前先手动设置dataset
+                dataset = lfs.load_dataset("02d418dd05223095b1574e961eb22402")
+                # 如果是server应该不需要这一步?
+                selected_job.mount_dataset(dataset)
+                temp_topology_manager = load_topology_manager(selected_job.job_id)
+                if self.role == "server":
+                    scheduler = JobAggregateScheduler(node=self.node, topology_manager=temp_topology_manager,
+                                                      job=selected_job)
+                    self.scheduler_list.append(scheduler)
+                    # while not scheduler.is_finished():
+                    #     if scheduler.is_available():
+                    #         print(f"server {self.node.address} 开始执行")
+                    #         scheduler.start()
+                    #     else:
+                    #         print(f"server {self.node.address} 等待")
+                    #         time.sleep(10)
+                    # JobManager.finish_job(selected_job.job_id)
+                elif self.role == "client":
+                    scheduler = JobTrainScheduler(node=self.node, job=selected_job,
+                                                  topology_manager=temp_topology_manager)
+                    client = ClientEntity(scheduler.node.address,
+                                          scheduler.job.dataset.dataset_id,
+                                          scheduler.node.pub_key)
+                    save_client(selected_job.job_id, client=client)
+                    scheduler.register()
+                    self.scheduler_list.append(scheduler)
+                    # while not scheduler.is_finished():
+                    #     if scheduler.is_available():
+                    #         print(f"client {self.node.address} 开始执行")
+                    #         scheduler.start()
+                    #     else:
+                    #         print(f"client {self.node.address} 等待")
+                    #         time.sleep(10)
+                else:
+                    raise ValueError(f"Unsupported role parameter {self.role}")
+            # 运行1轮scheduler_list当中的scheduler
+            for num in range(len(self.scheduler_list) - 1, -1, -1):
+                scheduler = self.scheduler_list[num]
+                if scheduler.is_finished():
+                    self.scheduler_list.remove(scheduler)
+                    JobManager.finish_job(scheduler.job_id)
+                else:
                     if scheduler.is_available():
                         print(f"client {self.node.address} 开始执行")
                         scheduler.start()
-                    else:
-                        print(f"client {self.node.address} 等待")
-                        time.sleep(10)
-            else:
-                raise ValueError(f"Unsupported role parameter {self.role}")
+                        if scheduler.is_finished():
+                            self.scheduler_list.remove(scheduler)
+                            JobManager.finish_job(scheduler.job_id)
 
     def listen_job(self):
         # 监听其他节点新生成的job
@@ -78,22 +92,22 @@ class NodeManager(object):
         # 4、self.waiting_list = jobs
         # 问题：是否需要去查询job的server列表和client列表，从而判断这个job是否与当前节点有关
 
-    def submit_job(self, job):
-        # 提交任务，将任务信息记录到数据库，并广播job
-        JobManager.submit_job(job)
-
-    def cancel_job(self, job_id):
-        # 取消任务，并更改数据库中的状态
-        JobManager.cancel_job(job_id=job_id)
-
-    def delay_job(self, job_id):
-        # 将某个进行/排队中的任务延后
-        pass
-
     def stop(self):
         # 暂停manager的运行
         pass
 
-    def start_job(self, job_id):
-        # 将任务加入到运行队列
-        pass
+    # def submit_job(self, job):
+    #     # 提交任务，将任务信息记录到数据库，并广播job
+    #     JobManager.submit_job(job)
+    #
+    # def cancel_job(self, job_id):
+    #     # 取消任务，并更改数据库中的状态
+    #     JobManager.cancel_job(job_id=job_id)
+    #
+    # def delay_job(self, job_id):
+    #     # 将某个进行/排队中的任务延后
+    #     pass
+
+    # def start_job(self, job_id):
+    #     # 将任务加入到运行队列
+    #     pass
