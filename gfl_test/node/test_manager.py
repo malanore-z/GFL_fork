@@ -19,10 +19,11 @@ class TestMethod(unittest.TestCase):
         node_client1 = GflNode.standalone_nodes[1]
         node_client2 = GflNode.standalone_nodes[2]
         self.node_manager_server = NodeManager(node=node_server, role="server")
-        self.node_manager_client1 = NodeManager(node=node_client1, role="client")
-        self.node_manager_client2 = NodeManager(node=node_client2, role="client")
+        # self.node_manager_client1 = NodeManager(node=node_client1, role="client")
+        # self.node_manager_client2 = NodeManager(node=node_client2, role="client")
         # 创建job
         self.job = generate_job()
+
         # 创建job对应的拓扑
         topology_config = TopologyConfig()
         topology_config.with_train_node_num(2)
@@ -31,6 +32,7 @@ class TestMethod(unittest.TestCase):
         topology_config.with_index2node([node_server.address, node_client1.address, node_client2.address])
         temp_topology_manager = CentralizedTopologyManager(topology_config)
         temp_topology_manager.generate_topology()
+
         # 保存job对应的拓扑
         save_topology_manager(job_id=self.job.job_id, topology_manager=temp_topology_manager)
 

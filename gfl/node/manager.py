@@ -23,50 +23,37 @@ class NodeManager(object):
         self.scheduler_list = []
 
     def run(self):
-        while True:
-            # 监听job，并将监听到的job保存到waiting_list中
-            self.listen_job()
-            # 为waiting_list中的job构造Scheduler实例，保存到scheduler_list
-            while self.waiting_list:
-                selected_job = self.waiting_list.pop()
-                print(f"{self.role} {self.node.address} 准备开始执行job{selected_job.job_id}")
-                JobManager.start_job(selected_job.job_id)
-                # 目前先手动设置dataset
-                dataset = lfs.load_dataset("02d418dd05223095b1574e961eb22402")
-                # 如果是server应该不需要这一步?
-                selected_job.mount_dataset(dataset)
-                temp_topology_manager = load_topology_manager(selected_job.job_id)
-                if self.role == "server":
-                    scheduler = JobAggregateScheduler(node=self.node, topology_manager=temp_topology_manager,
-                                                      job=selected_job)
-                    self.scheduler_list.append(scheduler)
-                    # while not scheduler.is_finished():
-                    #     if scheduler.is_available():
-                    #         print(f"server {self.node.address} 开始执行")
-                    #         scheduler.start()
-                    #     else:
-                    #         print(f"server {self.node.address} 等待")
-                    #         time.sleep(10)
-                    # JobManager.finish_job(selected_job.job_id)
-                elif self.role == "client":
-                    scheduler = JobTrainScheduler(node=self.node, job=selected_job,
-                                                  topology_manager=temp_topology_manager)
-                    client = ClientEntity(scheduler.node.address,
-                                          scheduler.job.dataset.dataset_id,
-                                          scheduler.node.pub_key)
-                    save_client(selected_job.job_id, client=client)
-                    scheduler.register()
-                    self.scheduler_list.append(scheduler)
-                    # while not scheduler.is_finished():
-                    #     if scheduler.is_available():
-                    #         print(f"client {self.node.address} 开始执行")
-                    #         scheduler.start()
-                    #     else:
-                    #         print(f"client {self.node.address} 等待")
-                    #         time.sleep(10)
-                else:
-                    raise ValueError(f"Unsupported role parameter {self.role}")
-            # 运行1轮scheduler_list当中的scheduler
+        # 只测试了单个任务的情况，run方法不是一个无限循环
+        # while True:
+        # 监听job，并将监听到的job保存到waiting_list中
+        self.listen_job()
+        # 为waiting_list中的job构造Scheduler实例，保存到scheduler_list
+        while self.waiting_list:
+            selected_job = self.waiting_list.pop()
+            print(f"{self.role} {self.node.address} 准备开始执行job{selected_job.job_id}")
+            # JobManager.start_job(selected_job.job_id)
+            # 目前先手动设置dataset
+            dataset = lfs.load_dataset("02d418dd05223095b1574e961eb22402")
+            # 如果是server应该不需要这一步?
+            selected_job.mount_dataset(dataset)
+            temp_topology_manager = load_topology_manager(selected_job.job_id)
+            if self.role == "server":
+                scheduler = JobAggregateScheduler(node=self.node, topology_manager=temp_topology_manager,
+                                                  job=selected_job)
+                self.scheduler_list.append(scheduler)
+            elif self.role == "client":
+                scheduler = JobTrainScheduler(node=self.node, job=selected_job,
+                                              topology_manager=temp_topology_manager)
+                client = ClientEntity(scheduler.node.address,
+                                      scheduler.job.dataset.dataset_id,
+                                      scheduler.node.pub_key)
+                save_client(selected_job.job_id, client=client)
+                scheduler.register()
+                self.scheduler_list.append(scheduler)
+            else:
+                raise ValueError(f"Unsupported role parameter {self.role}")
+        # 运行1轮scheduler_list当中的scheduler
+        while len(self.scheduler_list) != 0:
             for num in range(len(self.scheduler_list) - 1, -1, -1):
                 scheduler = self.scheduler_list[num]
                 if scheduler.is_finished():
@@ -96,18 +83,18 @@ class NodeManager(object):
         # 暂停manager的运行
         pass
 
-    # def submit_job(self, job):
-    #     # 提交任务，将任务信息记录到数据库，并广播job
-    #     JobManager.submit_job(job)
-    #
-    # def cancel_job(self, job_id):
-    #     # 取消任务，并更改数据库中的状态
-    #     JobManager.cancel_job(job_id=job_id)
-    #
-    # def delay_job(self, job_id):
-    #     # 将某个进行/排队中的任务延后
-    #     pass
+    def submit_job(self, job):
+        # 提交任务，将任务信息记录到数据库，并广播job
+        JobManager.submit_job(job)
 
-    # def start_job(self, job_id):
-    #     # 将任务加入到运行队列
-    #     pass
+    def cancel_job(self, job_id):
+        # 取消任务，并更改数据库中的状态
+        JobManager.cancel_job(job_id=job_id)
+
+    def delay_job(self, job_id):
+        # 将某个进行/排队中的任务延后
+        pass
+
+    def start_job(self, job_id):
+        # 将任务加入到运行队列
+        pass
