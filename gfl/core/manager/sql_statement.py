@@ -11,7 +11,7 @@ create table client (
     dataset text not null,
     pub_key text not null
 );
-create unique index client_address_uindex on client (address);
+create unique index  on client (address);
 
 create table params (
     id integer not null

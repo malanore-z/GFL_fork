@@ -4,7 +4,6 @@ from gfl.conf.node import GflNode
 from gfl.core.lfs import load_topology_manager
 from gfl.core.manager.job_manager import JobManager
 from gfl.core.manager.scheduler import JobAggregateScheduler, JobTrainScheduler
-from gfl.core.manager.sql_execute import ClientEntity, save_client
 
 
 # 发布job和运行job的过程：
@@ -58,10 +57,6 @@ class NodeManager(object):
                 elif self.role == "client":
                     scheduler = JobTrainScheduler(node=self.node, job=selected_job,
                                                   topology_manager=temp_topology_manager)
-                    client = ClientEntity(scheduler.node.address,
-                                          scheduler.job.dataset.dataset_id,
-                                          scheduler.node.pub_key)
-                    save_client(selected_job.job_id, client=client)
                     scheduler.register()
                     self.scheduler_list.append(scheduler)
                 else:

@@ -13,6 +13,7 @@ from gfl.core.context import WorkDirContext
 from gfl.core.data import Job
 from gfl.core.data.config import AggregateConfig
 from gfl.core.lfs.path import JobPath
+from gfl.core.manager.sql_execute import get_client_by_job_id
 from gfl.utils import TimeUtils, PathUtils
 from gfl.net.standlone import *
 
@@ -59,17 +60,6 @@ class Aggregator(object):
         self.topology_manager = topology_manager
 
     def update_clients(self):
-        """
-           获取并且更新当前节点的client的地址
-           Returns
-           -------
-
-           """
-        # 这边还需要判断是否在client是否存在于neighbor_in_node_list = self.tpmgr.get_in_neighbor_node_list(0)
-        # 获取聚合方在拓扑结构当中的邻居节点，在中心化的情况下，默认聚合节点的序号是0，
-        neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(0)
-        for neighbor_address in neighbor_in_node_address_list:
-            self.clients.add(neighbor_address)
         # """
         # 获取并且更新当前节点的client的地址
         # Returns
@@ -78,25 +68,25 @@ class Aggregator(object):
         # """
         # # 这边还需要判断是否在client是否存在于neighbor_in_node_list = self.tpmgr.get_in_neighbor_node_list(0)
         # # 获取聚合方在拓扑结构当中的邻居节点，在中心化的情况下，默认聚合节点的序号是0，
-        # neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(0)
-        # client = NetReceive.receive_cmd_register(self.job.job_id)
-        # while client is not None:
-        #     for neighbor_address in neighbor_in_node_address_list:
-        #         if client['address'] == neighbor_address:
-        #             self.clients.add(client['address'])
-        #     client = NetReceive.receive_cmd_register(self.job.job_id)
+        neighbor_in_node_address_list = self.topology_manager.get_in_neighbor_node_address_list(0)
+        client_list = NetReceive.receive_cmd_register(self.job.job_id)
+        if len(client_list) != 0:
+            for client in client_list:
+                for neighbor_address in neighbor_in_node_address_list:
+                    if client.address == neighbor_address:
+                        self.clients.add(client.address)
 
-    def update_clients_models(self):
-        """
-        获取并且更新当前节点的clients的模型（仅保存其路径，不加载模型)
-        Returns
-        -------
-
-        """
-        for client_addr in self.clients:
-            client_params_dir = JobPath(self.job_id).client_params_dir(self.step, client_addr) + f"/{self.job_id}.pth"
-            if os.path.exists(client_params_dir):
-                self.client_models[client_addr] = client_params_dir
+    # def update_clients_models(self):
+    #     """
+    #     获取并且更新当前节点的clients的模型（仅保存其路径，不加载模型)
+    #     Returns
+    #     -------
+    #
+    #     """
+    #     for client_addr in self.clients:
+    #         client_params_dir = JobPath(self.job_id).client_params_dir(self.step, client_addr) + f"/{self.job_id}.pth"
+    #         if os.path.exists(client_params_dir):
+    #             self.client_models[client_addr] = client_params_dir
 
     def receive_reports(self):
         """

@@ -1,3 +1,4 @@
+import gfl_test
 import threading
 import time
 import unittest
@@ -19,8 +20,8 @@ class TestMethod(unittest.TestCase):
         node_client1 = GflNode.standalone_nodes[1]
         node_client2 = GflNode.standalone_nodes[2]
         self.node_manager_server = NodeManager(node=node_server, role="server")
-        # self.node_manager_client1 = NodeManager(node=node_client1, role="client")
-        # self.node_manager_client2 = NodeManager(node=node_client2, role="client")
+        self.node_manager_client1 = NodeManager(node=node_client1, role="client")
+        self.node_manager_client2 = NodeManager(node=node_client2, role="client")
         # 创建job
         self.job = generate_job()
 

@@ -20,7 +20,6 @@ from gfl.core.context import SqliteContext
 from gfl.core.lfs.path import JobPath
 from gfl.core.manager.sql_statement import *
 
-
 KVEntity = namedtuple("KVEntity", ["key", "value"], defaults=[None, None])
 ClientEntity = namedtuple("ClientEntity", ["address", "dataset", "pub_key"], defaults=[None, None, None])
 ParamsEntity = namedtuple("ParamsEntity", ["id", "step", "is_global", "node_address", "params", "params_check"], defaults=[None, None, None, None, None, None])
