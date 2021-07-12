@@ -1,4 +1,5 @@
 import os
+import pickle
 from typing import Tuple, List
 import os
 from typing import Tuple
@@ -81,7 +82,7 @@ class StandaloneReceive(NetReceive):
         # 在standalone模式下，trainer获取当前聚合轮次下的全局模型
         # 根据 Job 中的 job_id 和 cur_round 获取指定轮次聚合后的 全局模型参数的路径
         global_params_dir = JobPath(job_id).global_params_dir(cur_round)
-        model_params_path = PathUtils.join(global_params_dir, job_id + '.pth')
+        model_params_path = PathUtils.join(global_params_dir, job_id + '.pkl')
         # 判断是否存在模型参数文件，如果存在则返回。
         if os.path.exists(global_params_dir) and os.path.isfile(model_params_path):
             # resources_already:1
@@ -97,3 +98,18 @@ class StandaloneReceive(NetReceive):
     @classmethod
     def receive_cmd_register(cls, job_id: str):
         return get_register_record(job_id)
+
+    @classmethod
+    def receive(cls, client_address: str, job_id: str, step: int, name: str):
+        client_dir = JobPath(job_id).client_params_dir(step, client_address)
+        client_data_path = client_dir + f"/{name}.pkl"
+        if os.path.exists(client_data_path):
+            try:
+                with open(client_data_path, 'rb') as pkl_file:
+                    data = pickle.load(pkl_file)
+            except Exception as e:
+                raise ValueError(f"数据 {name} 加载失败"
+                                 f"Error: {e}")
+            return data
+        else:
+            return None

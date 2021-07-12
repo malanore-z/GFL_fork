@@ -7,7 +7,9 @@ __all__ = [
     "load_all_job",
     "save_job",
     "load_job_zip",
-    "save_job_zip"
+    "save_job_zip",
+    "save_topology_manager",
+    "load_topology_manager"
 ]
 
 import json
@@ -21,6 +23,7 @@ from gfl.core.data.config import *
 from gfl.core.lfs.ipfs import Ipfs
 from gfl.core.lfs.path import JobPath, DatasetPath
 from gfl.core.lfs.types import File
+from gfl.topology.centralized_topology_manager import CentralizedTopologyManager
 from gfl.utils import ModuleUtils, PathUtils, ZipUtils
 
 
@@ -189,3 +192,39 @@ def save_job_zip(job_id: str, job: File) -> NoReturn:
     else:
         file_obj = File.file
     ZipUtils.extract(file_obj, job_path.root_dir)
+
+
+def load_topology_manager(job_id: str):
+    """
+    Load topology_manager from JSON file.
+    json->topology_config->topology_manager
+
+    :param job_id: Job ID
+    """
+    job_path = JobPath(job_id)
+    topology_config = __load_json(job_path.topology_config_file, TopologyConfig)
+    if topology_config is not None and isinstance(topology_config, TopologyConfig):
+        if topology_config.get_isCentralized() is True:
+            topology_manager = CentralizedTopologyManager(topology_config=topology_config)
+            return topology_manager
+
+
+def save_topology_manager(job_id, topology_manager):
+    """
+    Save topology_manager
+    topology_manager->topology_config->json
+
+    :param job_id: Job ID
+    :param topology_manager: topology_manager to save
+    """
+    job_path = JobPath(job_id)
+    job_path.makedirs()
+    topology_config = TopologyConfig()
+    topology_config.with_topology(topology_manager.topology)
+    topology_config.with_client_nodes(topology_manager.client_address_list)
+    topology_config.with_index2node(topology_manager.index2node)
+    topology_config.with_train_node_num(topology_manager.train_node_num)
+    topology_config.with_server_nodes(topology_manager.server_address_list)
+    # 目前暂时考虑中心化的场景
+    topology_config.with_isCentralized(True)
+    __save_json(job_path.topology_config_file, topology_config)

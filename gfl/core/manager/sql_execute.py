@@ -9,15 +9,16 @@ __all__ = [
     "save_kv",
     "save_client",
     "save_params",
-    "get_client_by_job_id"
+    "get_client_by_job_id",
+    "update_kv"
 ]
 
+import os
 from collections import namedtuple
 
 from gfl.core.context import SqliteContext
 from gfl.core.lfs.path import JobPath
 from gfl.core.manager.sql_statement import *
-
 
 KVEntity = namedtuple("KVEntity", ["key", "value"], defaults=[None, None])
 ClientEntity = namedtuple("ClientEntity", ["address", "dataset", "pub_key"], defaults=[None, None, None])
@@ -38,6 +39,7 @@ select_job_params_by_step_and_address = "SELECT * FROM params WHERE step=? AND n
 
 def create_tables(job_id: str):
     job_path = JobPath(job_id)
+    job_path.makedirs()
     with SqliteContext(job_path.sqlite_file) as (_, cursor):
         for s in create_job_kv:
             cursor.execute(s)
@@ -49,6 +51,10 @@ def create_tables(job_id: str):
 
 def save_kv(job_id: str, kv: KVEntity):
     __save(job_id, insert_job_kv, kv.key, kv.value)
+
+
+def update_kv(job_id: str, kv: KVEntity):
+    __save(job_id, update_job_kv, kv.value, kv.key)
 
 
 def get_kv(job_id: str, key: str):

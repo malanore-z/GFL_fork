@@ -1,4 +1,5 @@
 import json
+import pickle
 
 import torch
 from torch.utils.data import random_split, DataLoader
@@ -8,6 +9,7 @@ from gfl.conf.node import GflNode
 from gfl.core.data import Job
 from gfl.core.trainer.trainer import Trainer
 from gfl.core.lfs.path import *
+from gfl.net.standlone.receive import StandaloneReceive
 
 
 class SupervisedTrainer(Trainer):
@@ -43,6 +45,12 @@ class SupervisedTrainer(Trainer):
 
     def _post_train(self):
         super(SupervisedTrainer, self)._post_train()
+        self.reports["n_samples"] = len(self.dataset)
+        self.reports["n_batches"] = len(self.train_dataloader)
+        self.reports["train_loss"] = self.history["train_loss"]
+        self.reports["train_acc"] = self.history["train_acc"]
+        self.reports["val_loss"] = self.history["val_loss"]
+        self.reports["val_acc"] = self.history["val_acc"]
         with open("history.json", "w") as f:
             f.write(json.dumps(self.history, indent=4))
 
