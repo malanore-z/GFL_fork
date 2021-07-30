@@ -1,11 +1,18 @@
 import logging.config
 import os
 import shutil
+import tempfile
 import warnings
 
 import yaml
 
 from gfl.utils import PathUtils
+
+
+os_tempdir = tempfile.gettempdir()
+gfl_tempdir = PathUtils.join(os_tempdir, "gfl")
+if os.path.exists(gfl_tempdir):
+    os.makedirs(gfl_tempdir, exist_ok=True)
 
 
 class GflConfMetadata(type):
@@ -33,6 +40,10 @@ class GflConfMetadata(type):
     def cache_dir(cls):
         return cls._GflConf__cache_dir
 
+    @property
+    def temp_dir(cls):
+        return gfl_tempdir
+
 
 class GflConf(object, metaclass=GflConfMetadata):
 
@@ -45,6 +56,7 @@ class GflConf(object, metaclass=GflConfMetadata):
     __data_dir = PathUtils.join(__home_dir, "data")
     __logs_dir = PathUtils.join(__home_dir, "logs")
     __cache_dir = PathUtils.join(__home_dir, "cache")
+    __temp_dir = gfl_tempdir
 
     @classmethod
     def load(cls) -> None:

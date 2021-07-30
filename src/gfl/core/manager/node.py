@@ -128,7 +128,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
         for i in range(100):
             # 限制最多100个模拟节点， 防止此处出现死循环
             if i not in cls.standalone_nodes:
-                key_file = PathUtils.join(GflConf.home_dir, "key", "manager-%d.json" % i)
+                key_file = PathUtils.join(GflConf.home_dir, "key", "node-%d.json" % i)
                 cls.__save_node(node, key_file)
                 cls.standalone_nodes[i] = node
                 return
@@ -143,7 +143,7 @@ class GflNode(object, metaclass=GflNodeMetadata):
         key_dir = PathUtils.join(GflConf.home_dir, "key")
         cls.default_node = cls.__load_node(PathUtils.join(key_dir, "key.json"))
         for filename in os.listdir(key_dir):
-            if filename.startswith("manager-"):
+            if filename.startswith("node-"):
                 node_idx = int(filename[5:-5])
                 cls.standalone_nodes[node_idx] = cls.__load_node(PathUtils.join(key_dir, filename))
 

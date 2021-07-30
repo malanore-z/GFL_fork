@@ -21,7 +21,7 @@ init_parser = subparsers.add_parser("init", help="init gfl env")
 init_parser.add_argument("--home", type=str)
 init_parser.add_argument("-F", "--force", action="store_true")
 
-app_parser = subparsers.add_parser("app", help="startup gfl")
+app_parser = subparsers.add_parser("run", help="startup gfl")
 app_parser.add_argument("--home", type=str)
 app_parser.add_argument("--role", type=str)
 app_parser.add_argument("--console", action="store_true")
@@ -30,10 +30,11 @@ app_parser.add_argument("-D", "--define", dest="props", action="append", type=st
 attach_parser = subparsers.add_parser("attach", help="connect to gfl net")
 attach_parser.add_argument("--home", type=str)
 attach_parser.add_argument("--host", type=str, default="127.0.0.1")
-attach_parser.add_argument("--port", type=int, default=7878)
+attach_parser.add_argument("--port", type=int, default=9434)
 
 
 def detect_homedir(args_home):
+
     if args_home is not None:
         return args_home
     env = os.getenv("GFL_HOME")
@@ -47,13 +48,13 @@ if __name__ == "__main__":
     GflConf.home_dir = detect_homedir(args.home)
 
     if args.action == "attach":
-        Shell.attach()
+        Shell.attach(args.host, args.port)
     else:
         GflConf.load()
         Shell.welcome()
         if args.action == "init":
             Application.init(args.force)
-        elif args.action == "app":
+        elif args.action == "run":
             props = {}
             if args.props:
                 for p in args.props:

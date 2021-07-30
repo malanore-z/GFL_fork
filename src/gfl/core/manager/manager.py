@@ -21,7 +21,7 @@ class NodeManager(object):
         self.scheduler_list = []
         self._is_stop = False
 
-    def run_new(self):
+    def run(self):
         while True:
             if self._is_stop is True:
                 break
@@ -29,7 +29,7 @@ class NodeManager(object):
             pass
         # release resources
 
-    def run(self):
+    def run_old(self):
         while True:
             if self._is_stop is True:
                 # ToDo:结束运行时是否需要释放一些资源

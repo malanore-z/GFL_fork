@@ -1,7 +1,9 @@
 import logging
 import os
 import shutil
+import sys
 import threading
+import time
 
 from daemoniker import Daemonizer
 
@@ -9,6 +11,7 @@ from gfl.api.listener import HttpListener
 from gfl.conf import GflConf
 from gfl.core.lfs import Lfs
 from gfl.core.manager.node import GflNode
+from gfl.core.manager.holder import ManagerHolder
 from gfl.core.manager.manager import NodeManager
 from gfl.shell import Shell
 from gfl.utils import PathUtils
@@ -17,8 +20,6 @@ from gfl.utils import PathUtils
 class Application(object):
 
     logger = None
-    node_manager = None
-    standalone_managers = []
 
     def __init__(self):
         super(Application, self).__init__()
@@ -43,6 +44,7 @@ class Application(object):
 
     @classmethod
     def run(cls, role, console, **kwargs):
+        sys.stderr = open(os.devnull, "w")
         cls.logger = logging.getLogger("gfl")
         with Daemonizer() as (is_setup, daemonizer):
             main_pid = None
@@ -63,21 +65,31 @@ class Application(object):
             for _ in range(len(GflNode.standalone_nodes), client_number):
                 GflNode.add_standalone_node()
 
-            cls.node_manager = NodeManager(node=GflNode.default_node, role="server")
+            ManagerHolder.default_manager = NodeManager(node=GflNode.default_node, role="server")
 
             for i in range(client_number):
                 client_manager = NodeManager(node=GflNode.standalone_nodes[i], role="client")
-                cls.standalone_managers.append(client_manager)
+                ManagerHolder.standalone_managers.append(client_manager)
         else:
-            cls.node_manager = NodeManager(node=GflNode.default_node, role=role)
+            ManagerHolder.default_manager = NodeManager(node=GflNode.default_node, role=role)
 
-        cls.__startup_node_managers()
+        # cls.__startup_node_managers()
         HttpListener.start()
+
+        while HttpListener.is_alive():
+            time.sleep(2)
 
     @classmethod
     def __startup_node_managers(cls):
         # 遍历所有的NodeManager
-        threading.Thread(target=cls.node_manager.run).start()
-        for nm in cls.standalone_managers:
+        threading.Thread(target=ManagerHolder.default_manager.run).start()
+        for nm in ManagerHolder.standalone_managers:
             t = threading.Thread(target=nm.run)
             t.start()
+
+    @classmethod
+    def __stop_node_managers(cls):
+        if ManagerHolder.default_manager is not None:
+            ManagerHolder.default_manager.stop()
+        for nm in ManagerHolder.standalone_managers:
+            nm.stop()

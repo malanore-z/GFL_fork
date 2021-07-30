@@ -19,3 +19,8 @@ class EthFetch(NetFetch):
 class EthSend(NetSend):
 
     pass
+
+
+class EthCallback(NetCallback):
+
+    pass

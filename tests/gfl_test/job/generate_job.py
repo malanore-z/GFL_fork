@@ -2,7 +2,7 @@ from gfl.core.manager.node import GflNode
 from gfl.core.lfs.lfs import save_topology_manager
 from gfl.core import TopologyConfig
 from gfl.core import JobManager, DatasetManager
-from gfl.core.generator import DatasetGenerator, JobGenerator
+from gfl.gfl.generator import DatasetGenerator, JobGenerator
 
 import tests.gfl_test.model as fl_model
 from tests import gfl_test as fl_dataset

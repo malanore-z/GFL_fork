@@ -55,7 +55,7 @@ class Lfs(object):
         return dataset
 
     @classmethod
-    def save_dataset(cls, dataset: Dataset, module=None) -> NoReturn:
+    def save_dataset(cls, dataset: Dataset, *, module=None, module_data=None) -> NoReturn:
         """
         Save dataset
 
@@ -68,7 +68,15 @@ class Lfs(object):
         dataset_path.makedirs()
         cls.__save_json(dataset_path.metadata_file, dataset.metadata)
         cls.__save_json(dataset_path.dataset_config_file, dataset.dataset_config)
-        ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.module_dir)
+        if module_data is not None:
+            ZipUtils.extract_data(module_data, GflConf.temp_dir)
+            ModuleUtils.migrate_module(PathUtils.join(GflConf.temp_dir, dataset.dataset_id),
+                                       dataset_path.module_name,
+                                       dataset_path.module_dir)
+        elif module is not None:
+            ModuleUtils.submit_module(module, dataset_path.module_name, dataset_path.module_dir)
+        else:
+            ModuleUtils.submit_module(dataset.module, dataset_path.module_name, dataset_path.module_dir)
 
     @classmethod
     def load_dataset_zip(cls, dataset_id: str) -> File:
@@ -141,22 +149,29 @@ class Lfs(object):
         return jobs
 
     @classmethod
-    def save_job(cls, job: Job, module=None) -> NoReturn:
+    def save_job(cls, job: Job, *, module=None, module_data=None) -> NoReturn:
         """
         Save job
 
         :param job: job to save
         :param module: job module
+        :param module_data:
         """
-        if module is None:
-            module = job.module
         job_path = JobPath(job.job_id)
         job_path.makedirs()
         cls.__save_json(job_path.metadata_file, job.metadata)
         cls.__save_json(job_path.job_config_file, job.job_config)
         cls.__save_json(job_path.train_config_file, job.train_config)
         cls.__save_json(job_path.aggregate_config_file, job.aggregate_config)
-        ModuleUtils.submit_module(module, job_path.module_name, job_path.module_dir)
+        if module_data is not None:
+            ZipUtils.extract_data(module_data, GflConf.temp_dir)
+            ModuleUtils.migrate_module(PathUtils.join(GflConf.temp_dir, job.job_id),
+                                       job_path.module_name,
+                                       job_path.module_dir)
+        elif module is not None:
+            ModuleUtils.submit_module(module, job_path.module_name, job_path.module_dir)
+        else:
+            ModuleUtils.submit_module(job.module, job_path.module_name, job_path.module_dir)
 
     @classmethod
     def load_job_zip(cls, job_id: str) -> File:

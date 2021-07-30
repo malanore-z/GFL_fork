@@ -9,10 +9,11 @@ from gfl.core.scheduler.job_status import JobStatus
 
 class JobExecutor(object):
 
-    def __init__(self, *, node: GflNode, job: Job):
+    def __init__(self, *, node: GflNode, job: Job, step: int):
         super(JobExecutor, self).__init__()
         self.node = node
         self.job = job
+        self.step = step
 
     @abc.abstractmethod
     def start(self):
@@ -42,7 +43,7 @@ class JobExecutor(object):
 class JobTrainExecutor(JobExecutor):
 
     def __init__(self, *, node: GflNode, job: Job, step: int):
-        super(JobTrainExecutor, self).__init__(node=node, job=job)
+        super(JobTrainExecutor, self).__init__(node=node, job=job, step=step)
         self.trainer = None
         self.step = step
         self.__status = JobStatus.RESOURCE_NOT_ALREADY

@@ -15,9 +15,6 @@ from gfl.utils import TimeUtils
 
 class Generator(object):
 
-    JOB_NAMESPACE = uuid.UUID(GflNode.address[:31] + '1')
-    DATASET_NAMESPACE = uuid.UUID(GflNode.address[:31] + "2")
-
     def __init__(self, module):
         super(Generator, self).__init__()
         self.module = module
@@ -27,18 +24,12 @@ class Generator(object):
         pass
 
     @classmethod
-    def __generate_uuid(cls, namespace):
-        nano_time = int(int(1e9) * time.time())
-        name = GflNode.address[31:] + str(nano_time / 100)
-        return uuid.uuid3(namespace, name).hex.replace("-", "")
-
-    @classmethod
     def _generate_job_id(cls):
-        return cls.__generate_uuid(cls.JOB_NAMESPACE)
+        return uuid.uuid4().hex
 
     @classmethod
     def _generate_dataset_id(cls):
-        return cls.__generate_uuid(cls.DATASET_NAMESPACE)
+        return uuid.uuid4().hex
 
 
 class DatasetGenerator(Generator):

@@ -8,6 +8,35 @@ from pathlib import PurePath
 class ModuleUtils(object):
 
     @classmethod
+    def get_module_path(cls, module):
+        """
+
+        :param module:
+        :return:
+        """
+        module_path = inspect.getsourcefile(module)
+        if module_path.endswith("__init__.py"):
+            return PurePath(os.path.dirname(module_path)).as_posix()
+        else:
+            return PurePath(module_path).as_posix()
+
+    @classmethod
+    def migrate_module(cls, src_module_path: str, target_module_name, target_dir):
+        """
+
+        :param src_module_path:
+        :param target_module_name:
+        :param target_dir:
+        :return:
+        """
+        if src_module_path.endswith("__init__.py"):
+            shutil.copytree(os.path.dirname(src_module_path), PurePath(target_dir, target_module_name).as_posix())
+        elif os.path.isdir(src_module_path):
+            shutil.copytree(src_module_path, PurePath(target_dir, target_module_name).as_posix())
+        else:
+            shutil.copy(src_module_path, PurePath(target_dir, target_module_name + ".py").as_posix())
+
+    @classmethod
     def submit_module(cls, module, target_module_name, target_dir):
         """
         copy a module to the target directory
@@ -18,10 +47,7 @@ class ModuleUtils(object):
         """
         cls.verify_module_api(module)
         module_path = inspect.getsourcefile(module)
-        if module_path.endswith("__init__.py"):
-            shutil.copytree(os.path.dirname(module_path), PurePath(target_dir, target_module_name).as_posix())
-        else:
-            shutil.copy(module_path, PurePath(target_dir, target_module_name + ".py").as_posix())
+        cls.migrate_module(module_path, target_module_name, target_dir)
 
     @classmethod
     def import_module(cls, path, name):

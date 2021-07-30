@@ -1,10 +1,40 @@
 import os
+from io import BytesIO
 from pathlib import PurePath
 from typing import NoReturn, Union
 from zipfile import ZipFile, ZIP_DEFLATED
 
 
 class ZipUtils(object):
+
+    @classmethod
+    def get_compress_data(cls, src_paths: Union[str, list], basename=None) -> bytes:
+        """
+
+        :param src_paths:
+        :param basename:
+        :return:
+        """
+        zip_file = BytesIO()
+        cls.compress(src_paths, zip_file, basename)
+        zip_file.seek(0)
+        data = zip_file.read()
+        zip_file.close()
+        return data
+
+    @classmethod
+    def extract_data(cls, data: bytes, dst_path: str) -> NoReturn:
+        """
+
+        :param data:
+        :param dst_path:
+        :return:
+        """
+        zip_file = BytesIO()
+        zip_file.write(data)
+        zip_file.seek(0)
+        cls.extract(zip_file, dst_path)
+        zip_file.close()
 
     @classmethod
     def compress(cls, src_paths: Union[str, list], dst_zip_file, basename=None) -> NoReturn:
